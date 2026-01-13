@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Estudio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Sistema de Estudio</h1>
+            <p>Carga tu cuestionario en formato JSON para comenzar</p>
+        </header>
+
+        <main id="main-content">
+            <!-- Upload Section -->
+            <section id="upload-section" class="card fade-in">
+                <div class="upload-area" id="drop-zone">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <h3>Arrastra tus archivos JSON aquí</h3>
+                    <p>Puedes cargar uno o múltiples archivos</p>
+                    <label for="file-upload" class="btn primary">Seleccionar Archivos</label>
+                    <input type="file" id="file-upload" accept=".json" multiple hidden>
+                </div>
+                <div class="example-link">
+                    <a href="example_quiz.json" download>Descargar ejemplo de formato.json</a>
+                </div>
+            </section>
+
+            <!-- Setup Section (Hidden by default) -->
+            <section id="setup-section" class="hidden card fade-in">
+                <h2>Configuración</h2>
+                <div class="setup-info">
+                    <p>Total de preguntas cargadas: <strong id="total-questions-count">0</strong></p>
+                </div>
+
+                <div class="setup-options">
+                    <h3>Realizar Test</h3>
+                    <div class="button-grid">
+                        <button class="btn secondary action-btn" data-action="test" data-count="10">10
+                            Preguntas</button>
+                        <button class="btn secondary action-btn" data-action="test" data-count="20">20
+                            Preguntas</button>
+                        <button class="btn secondary action-btn" data-action="test" data-count="all">Todas
+                            (Aleatorio)</button>
+                    </div>
+
+                    <h3>Modo Estudio</h3>
+                    <div class="button-grid">
+                        <button class="btn primary action-btn" data-action="study" data-count="all">Ver todas con
+                            respuestas</button>
+                    </div>
+                </div>
+            </section>
+            <div class="example-link">
+                <a href="example_quiz.json" download>Descargar ejemplo de formato.json</a>
+            </div>
+            </section>
+
+            <!-- Quiz Section (Hidden by default) -->
+            <section id="quiz-section" class="hidden">
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+
+                <div class="card question-card fade-in" id="question-container">
+                    <!-- Question content will be injected here -->
+                </div>
+
+                <div class="controls">
+                    <button id="submit-btn" class="btn primary">Confirmar Respuesta</button>
+                    <button id="next-btn" class="btn secondary hidden">Siguiente Pregunta</button>
+                </div>
+            </section>
+
+            <!-- Results Section (Hidden by default) -->
+            <section id="results-section" class="hidden card fade-in">
+                <h2>Resultados</h2>
+                <div class="score-display">
+                    <span id="score-value">0</span>%
+                </div>
+                <p id="score-details"></p>
+                <button id="restart-btn" class="btn primary">Estudiar de nuevo</button>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>

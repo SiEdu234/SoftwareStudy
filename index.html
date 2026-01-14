@@ -4,97 +4,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Estudio</title>
+    <title>StudyFlow - Gestor de Estudio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <div class="app-container">
+        <!-- HEADER -->
         <header>
-            <h1>Sistema de Estudio</h1>
-            <p>Carga tu cuestionario en formato JSON para comenzar</p>
+            <div class="header-content">
+                <h1>Estudien vagos<span class="highlight">Flow</span></h1>
+            </div>
         </header>
 
         <main id="main-content">
-            <!-- Upload Section -->
-            <section id="upload-section" class="card fade-in">
-                <div class="upload-area" id="drop-zone">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="17 8 12 3 7 8" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
-                    <h3>Arrastra tus archivos JSON aquí</h3>
-                    <p>Puedes cargar uno o múltiples archivos</p>
-                    <label for="file-upload" class="btn primary">Seleccionar Archivos</label>
-                    <input type="file" id="file-upload" accept=".json" multiple hidden>
-                </div>
-                <div class="example-link">
-                    <a href="example_quiz.json" download>Descargar ejemplo de formato.json</a>
-                </div>
-            </section>
 
-            <!-- Setup Section (Hidden by default) -->
-            <section id="setup-section" class="hidden card fade-in">
-                <h2>Configuración</h2>
-                <div class="setup-info">
-                    <p>Total de preguntas cargadas: <strong id="total-questions-count">0</strong></p>
+            <!-- VIEW: DASHBOARD (SUBJECTS LIST) -->
+            <section id="dashboard-view" class="view active fade-in">
+                <div class="dashboard-header">
+                    <h2>Mis Materias</h2>
+                    <button id="btn-create-subject" class="btn primary icon-btn">
+                        <span class="material-icons-round">add</span> Nueva Materia
+                    </button>
                 </div>
 
-                <div class="setup-options">
-                    <h3>Realizar Test</h3>
-                    <div class="button-grid">
-                        <button class="btn secondary action-btn" data-action="test" data-count="10">10
-                            Preguntas</button>
-                        <button class="btn secondary action-btn" data-action="test" data-count="20">20
-                            Preguntas</button>
-                        <button class="btn secondary action-btn" data-action="test" data-count="all">Todas
-                            (Aleatorio)</button>
-                    </div>
-
-                    <h3>Modo Estudio</h3>
-                    <div class="button-grid">
-                        <button class="btn primary action-btn" data-action="study" data-count="all">Ver todas con
-                            respuestas</button>
+                <div id="subjects-grid" class="library-grid">
+                    <!-- Subject Cards Injected Here -->
+                    <div class="empty-state">
+                        <div class="icon-box">
+                            <span class="material-icons-round">folder_open</span>
+                        </div>
+                        <h3>No tienes materias creadas</h3>
+                        <p>Crea una materia para organizar tus cuestionarios.</p>
                     </div>
                 </div>
             </section>
-            <div class="example-link">
-                <a href="example_quiz.json" download>Descargar ejemplo de formato.json</a>
-            </div>
+
+            <!-- VIEW: SUBJECT DETAILS (FILE MANAGER) -->
+            <!-- Removed 'hidden' class here, relying on 'view' CSS -->
+            <section id="subject-view" class="view">
+                <div class="view-header">
+                    <button id="btn-back-dashboard" class="btn text-only">
+                        <span class="material-icons-round">arrow_back</span> Volver
+                    </button>
+                    <h2 id="subject-title">Nombre Materia</h2>
+                </div>
+
+                <div class="subject-layout">
+                    <!-- Files List -->
+                    <div class="files-panel card">
+                        <div class="panel-header">
+                            <h3>Archivos Cargados</h3>
+                            <label for="import-file" class="btn secondary icon-btn small">
+                                <span class="material-icons-round">upload_file</span> Subir JSON
+                            </label>
+                            <input type="file" id="import-file" accept=".json" multiple hidden>
+                        </div>
+                        <div id="files-list" class="files-list">
+                            <!-- File Items -->
+                        </div>
+                    </div>
+
+                    <!-- Session Config -->
+                    <div class="session-panel card">
+                        <h3>Configurar Práctica</h3>
+                        <p class="helper-text">Selecciona los archivos de la izquierda que quieras incluir.</p>
+
+                        <div class="config-group">
+                            <label>Cantidad de Preguntas</label>
+                            <div class="grid-options">
+                                <button class="option-btn" data-count="10">10</button>
+                                <button class="option-btn" data-count="20">20</button>
+                                <button class="option-btn" data-count="30">30</button>
+                                <button class="option-btn active" data-count="all">Todas</button>
+                            </div>
+                        </div>
+
+                        <div class="config-group">
+                            <label>Modo</label>
+                            <div class="segmented-control">
+                                <button class="segment active" data-mode="test">Test</button>
+                                <button class="segment" data-mode="study">Estudio (Ver Todo)</button>
+                            </div>
+                        </div>
+
+                        <button id="btn-start-session" class="btn primary full-width" disabled>
+                            Comenzar Sesión
+                        </button>
+                    </div>
+                </div>
             </section>
 
-            <!-- Quiz Section (Hidden by default) -->
-            <section id="quiz-section" class="hidden">
-                <div class="progress-bar-container">
-                    <div class="progress-bar" id="progress-bar"></div>
+            <!-- VIEW: QUIZ RUNNER -->
+            <!-- Removed 'hidden' class here -->
+            <section id="quiz-view" class="view">
+                <div class="quiz-status-bar">
+                    <button id="btn-exit-quiz" class="btn text-only small">
+                        <span class="material-icons-round">close</span> Salir
+                    </button>
+                    <div class="progress-wrapper">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                    <span id="quiz-progress-text">0/0</span>
                 </div>
 
                 <div class="card question-card fade-in" id="question-container">
-                    <!-- Question content will be injected here -->
+                    <!-- Question Injected Here -->
                 </div>
 
                 <div class="controls">
-                    <button id="submit-btn" class="btn primary">Confirmar Respuesta</button>
-                    <button id="next-btn" class="btn secondary hidden">Siguiente Pregunta</button>
+                    <button id="submit-btn" class="btn primary">Confirmar</button>
+                    <button id="next-btn" class="btn secondary hidden">Siguiente <span
+                            class="material-icons-round">arrow_forward</span></button>
                 </div>
             </section>
 
-            <!-- Results Section (Hidden by default) -->
-            <section id="results-section" class="hidden card fade-in">
-                <h2>Resultados</h2>
-                <div class="score-display">
-                    <span id="score-value">0</span>%
+            <!-- VIEW: RESULTS -->
+            <!-- Removed 'hidden' class here -->
+            <section id="results-view" class="view fade-in">
+                <div class="results-card card">
+                    <div class="score-ring-container">
+                        <div class="score-ring">
+                            <svg viewBox="0 0 36 36" class="circular-chart">
+                                <path class="circle-bg"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="circle" id="score-circle-path" stroke-dasharray="0, 100"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <div class="score-text">
+                                <span id="result-percentage">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h2 class="result-title">Sesión Finalizada</h2>
+                    <p id="result-details" class="result-subtitle">Has acertado X de Y preguntas.</p>
+
+                    <div class="result-actions">
+                        <button id="btn-return-subject" class="btn secondary">Volver a Materia</button>
+                        <button id="btn-retry" class="btn primary">Repetir Sesión</button>
+                    </div>
                 </div>
-                <p id="score-details"></p>
-                <button id="restart-btn" class="btn primary">Estudiar de nuevo</button>
             </section>
+
         </main>
     </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden">Mensaje</div>
+
     <script src="script.js"></script>
 </body>
 

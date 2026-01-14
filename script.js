@@ -1,330 +1,503 @@
+const STORAGE_KEY = 'studyflow_data_v1';
+
 document.addEventListener('DOMContentLoaded', () => {
-    // State
-    let allQuestions = []; // Pool of all questions from loaded files
-    let currentQuizQuestions = []; // Questions for the current session (subset or all)
-    let currentQuestionIndex = 0;
-    let score = 0;
-    let userAnswers = []; // Store user selected option IDs for current question
-    let currentMode = 'test'; // 'test' or 'study'
+    // === STATE ===
+    const state = {
+        data: { subjects: [] }, // { subjects: [ { id, name, files: [] } ] }
+        currentSubjectId: null,
+        selectedFiles: [],
+        sessionQuestions: [],
+        currentQuestionIndex: 0,
+        score: 0,
+        userAnswers: [],
+        sessionMode: 'test',
+        sessionCount: 'all'
+    };
 
-    // DOM Elements
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-upload');
-    const uploadSection = document.getElementById('upload-section');
-    const setupSection = document.getElementById('setup-section');
-    const quizSection = document.getElementById('quiz-section');
-    const resultsSection = document.getElementById('results-section');
-    const questionContainer = document.getElementById('question-container');
-    const progressBar = document.getElementById('progress-bar');
-    const submitBtn = document.getElementById('submit-btn');
-    const nextBtn = document.getElementById('next-btn');
-    const restartBtn = document.getElementById('restart-btn');
-    const totalQuestionsCountEl = document.getElementById('total-questions-count');
+    // === DOM ELEMENTS ===
+    const views = {
+        dashboard: document.getElementById('dashboard-view'),
+        subject: document.getElementById('subject-view'),
+        quiz: document.getElementById('quiz-view'),
+        results: document.getElementById('results-view')
+    };
 
-    // Event Listeners
-    dropZone.addEventListener('click', () => fileInput.click());
+    const els = {
+        createSubjectBtn: document.getElementById('btn-create-subject'),
+        subjectsGrid: document.getElementById('subjects-grid'),
+        backDashboardBtn: document.getElementById('btn-back-dashboard'),
+        subjectTitle: document.getElementById('subject-title'),
+        importInput: document.getElementById('import-file'),
+        filesList: document.getElementById('files-list'),
+        startSessionBtn: document.getElementById('btn-start-session'),
+        questionContainer: document.getElementById('question-container'),
+        progressBar: document.getElementById('progress-bar'),
+        progressText: document.getElementById('quiz-progress-text'),
+        submitBtn: document.getElementById('submit-btn'),
+        nextBtn: document.getElementById('next-btn'),
+        exitQuizBtn: document.getElementById('btn-exit-quiz'),
+        resultPercentage: document.getElementById('result-percentage'),
+        resultDetails: document.getElementById('result-details'),
+        scoreCircle: document.getElementById('score-circle-path'),
+        returnSubjectBtn: document.getElementById('btn-return-subject'),
+        retryBtn: document.getElementById('btn-retry'),
+        toast: document.getElementById('toast')
+    };
 
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
+    // === INITIALIZATION ===
+    loadData();
+    renderDashboard();
+
+    // === EVENT LISTENERS ===
+
+    // Dashboard
+    els.createSubjectBtn.addEventListener('click', () => {
+        const name = prompt("Nombre de la nueva materia:");
+        if (name && name.trim()) {
+            createSubject(name.trim());
+        }
     });
 
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('dragover');
-    });
+    els.backDashboardBtn.addEventListener('click', () => switchView('dashboard'));
 
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        handleFiles(e.dataTransfer.files);
-    });
+    // Subject View
+    els.importInput.addEventListener('change', handleImport);
 
-    fileInput.addEventListener('change', (e) => {
-        handleFiles(e.target.files);
-    });
-
-    // Setup Screen Actions
-    document.querySelectorAll('.action-btn').forEach(btn => {
+    // Session Config
+    document.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const action = e.target.dataset.action;
-            const count = e.target.dataset.count;
-            startSession(action, count);
+            document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            state.sessionCount = e.target.dataset.count;
         });
     });
 
-    submitBtn.addEventListener('click', checkAnswer);
-    nextBtn.addEventListener('click', nextQuestion);
-    restartBtn.addEventListener('click', restartApp);
-
-    function handleFiles(files) {
-        if (!files || files.length === 0) return;
-
-        allQuestions = []; // Reset global pool
-        let filesProcessed = 0;
-
-        Array.from(files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const json = JSON.parse(e.target.result);
-                    if (json.questions && Array.isArray(json.questions)) {
-                        allQuestions = allQuestions.concat(json.questions);
-                    }
-                } catch (err) {
-                    console.error("Error parsing file:", file.name, err);
-                    alert(`Error leyendo ${file.name}. Verifica el formato JSON.`);
-                } finally {
-                    filesProcessed++;
-                    if (filesProcessed === files.length) {
-                        onFilesLoaded();
-                    }
-                }
-            };
-            reader.readAsText(file);
+    document.querySelectorAll('.segment').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.segment').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            state.sessionMode = e.target.dataset.mode;
         });
+    });
+
+    els.startSessionBtn.addEventListener('click', startSession);
+
+    // Quiz Navigation
+    els.submitBtn.addEventListener('click', checkAnswer);
+    els.nextBtn.addEventListener('click', nextQuestion);
+
+    els.exitQuizBtn.addEventListener('click', () => {
+        if (confirm("¿Seguro que quieres salir? Se perderá el progreso actual.")) {
+            switchView('subject');
+        }
+    });
+
+    els.returnSubjectBtn.addEventListener('click', () => switchView('subject'));
+    els.retryBtn.addEventListener('click', startSession);
+
+    // === STORAGE MGR ===
+    function loadData() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+            try {
+                state.data = JSON.parse(raw);
+                if (!state.data.subjects) state.data.subjects = [];
+            } catch (e) {
+                console.error("Data corrupt, resetting", e);
+                state.data = { subjects: [] };
+            }
+        }
     }
 
-    function onFilesLoaded() {
-        if (allQuestions.length === 0) {
-            alert('No se encontraron preguntas válidas en los archivos.');
+    function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+    }
+
+    // === LOGIC ===
+
+    function createSubject(name) {
+        const newSubject = {
+            id: crypto.randomUUID(),
+            name: name,
+            files: []
+        };
+        state.data.subjects.push(newSubject);
+        saveData();
+        renderDashboard();
+        showToast(`Materia "${name}" creada`);
+    }
+
+    function deleteSubject(id) {
+        if (confirm("¿Eliminar materia y todos sus archivos?")) {
+            state.data.subjects = state.data.subjects.filter(s => s.id !== id);
+            saveData();
+            renderDashboard();
+        }
+    }
+
+    function openSubject(id) {
+        state.currentSubjectId = id;
+        const subject = state.data.subjects.find(s => s.id === id);
+        if (!subject) return;
+
+        els.subjectTitle.textContent = subject.name;
+        state.selectedFiles = []; // Reset selection
+        renderFilesList();
+        switchView('subject');
+    }
+
+    async function handleImport(e) {
+        const files = e.target.files;
+        if (!files.length) return;
+
+        const subjectIndex = state.data.subjects.findIndex(s => s.id === state.currentSubjectId);
+        if (subjectIndex === -1) return;
+
+        let addedCount = 0;
+        for (const file of files) {
+            try {
+                const text = await file.text();
+                const json = JSON.parse(text);
+
+                if (!json.questions || !Array.isArray(json.questions)) {
+                    throw new Error("Formato inválido");
+                }
+
+                const newFile = {
+                    id: crypto.randomUUID(),
+                    name: file.name.replace('.json', ''),
+                    data: json.questions, // Store only questions array to save space? Or full obj
+                    date: new Date().toISOString()
+                };
+
+                state.data.subjects[subjectIndex].files.push(newFile);
+                addedCount++;
+            } catch (err) {
+                console.error(err);
+                showToast(`Error en ${file.name}`, 'error');
+            }
+        }
+
+        if (addedCount > 0) {
+            saveData();
+            renderFilesList();
+            showToast(`${addedCount} archivos subidos`);
+        }
+        els.importInput.value = '';
+    }
+
+    function deleteFile(fileId) {
+        const subjectIndex = state.data.subjects.findIndex(s => s.id === state.currentSubjectId);
+        if (subjectIndex === -1) return;
+
+        if (confirm("¿Eliminar archivo?")) {
+            state.data.subjects[subjectIndex].files = state.data.subjects[subjectIndex].files.filter(f => f.id !== fileId);
+            saveData();
+            renderFilesList();
+        }
+    }
+
+    // === RENDERERS ===
+
+    function renderDashboard() {
+        els.subjectsGrid.innerHTML = '';
+
+        if (state.data.subjects.length === 0) {
+            els.subjectsGrid.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon-box"><span class="material-icons-round">folder_off</span></div>
+                    <h3>No tienes materias</h3>
+                    <p>Agrega una materia para empezar.</p>
+                </div>`;
             return;
         }
 
-        totalQuestionsCountEl.textContent = allQuestions.length;
-        uploadSection.classList.add('hidden');
-        setupSection.classList.remove('hidden');
+        state.data.subjects.forEach(subject => {
+            const card = document.createElement('div');
+            card.className = 'quiz-card fade-in';
+            card.innerHTML = `
+                <h3>${subject.name}</h3>
+                <div class="card-meta">${subject.files.length} archivos</div>
+            `;
+
+            // Delete Subject Button (Top Right)
+            const delBtn = document.createElement('button');
+            delBtn.innerHTML = '<span class="material-icons-round">delete</span>';
+            delBtn.className = 'delete-btn';
+            delBtn.style.position = 'absolute';
+            delBtn.style.top = '1rem';
+            delBtn.style.right = '1rem';
+            delBtn.onclick = (e) => { e.stopPropagation(); deleteSubject(subject.id); };
+
+            card.appendChild(delBtn);
+
+            card.addEventListener('click', () => openSubject(subject.id));
+            els.subjectsGrid.appendChild(card);
+        });
     }
 
-    function shuffleArray(array) {
-        // Create a copy to shuffle
-        const shuffled = [...array];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    function renderFilesList() {
+        const subject = state.data.subjects.find(s => s.id === state.currentSubjectId);
+        if (!subject) return;
+
+        els.filesList.innerHTML = '';
+        state.selectedFiles = []; // Reset logic
+        updateStartButton();
+
+        if (subject.files.length === 0) {
+            els.filesList.innerHTML = `<p style="text-align:center; color:var(--text-secondary); padding:2rem;">No hay archivos. ¡Sube uno!</p>`;
+            return;
         }
-        return shuffled;
-    }
 
-    function startSession(mode, countStr) {
-        currentMode = mode;
-        setupSection.classList.add('hidden');
-        quizSection.classList.remove('hidden');
+        subject.files.forEach(file => {
+            const item = document.createElement('div');
+            item.className = 'file-item';
 
-        // Prepare Questions
-        let questionsToUse = shuffleArray(allQuestions); // Always random pool base
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = file.id;
+            checkbox.addEventListener('change', () => toggleFileSelection(file.id));
 
-        if (mode === 'test') {
-            if (countStr !== 'all') {
-                const count = parseInt(countStr);
-                questionsToUse = questionsToUse.slice(0, count);
-            }
+            const label = document.createElement('span');
+            label.textContent = `${file.name} (${file.data.length} pgs)`;
+            label.style.flex = 1;
 
-            // Randomize options for each question in the subset
-            questionsToUse.forEach(q => {
-                if (q.options) {
-                    q.options = shuffleArray(q.options);
+            const trash = document.createElement('button');
+            trash.className = 'delete-btn';
+            trash.innerHTML = '<span class="material-icons-round">delete</span>';
+            trash.onclick = (e) => { e.stopPropagation(); deleteFile(file.id); };
+
+            item.appendChild(checkbox);
+            item.appendChild(label);
+            item.appendChild(trash);
+
+            // Click row to toggle
+            item.addEventListener('click', (e) => {
+                if (e.target !== checkbox && e.target !== trash && !trash.contains(e.target)) {
+                    checkbox.checked = !checkbox.checked;
+                    toggleFileSelection(file.id);
                 }
             });
 
-            currentQuizQuestions = questionsToUse;
-            currentQuestionIndex = 0;
-            score = 0;
-            renderQuestion();
+            els.filesList.appendChild(item);
+        });
+    }
 
-        } else if (mode === 'study') {
-            currentQuizQuestions = allQuestions; // Study all
+    function toggleFileSelection(fileId) {
+        if (state.selectedFiles.includes(fileId)) {
+            state.selectedFiles = state.selectedFiles.filter(id => id !== fileId);
+        } else {
+            state.selectedFiles.push(fileId);
+        }
+        updateStartButton();
+    }
+
+    function updateStartButton() {
+        const count = state.selectedFiles.length;
+        if (count > 0) {
+            els.startSessionBtn.disabled = false;
+            els.startSessionBtn.textContent = `Comenzar con ${count} archivos`;
+        } else {
+            els.startSessionBtn.disabled = true;
+            els.startSessionBtn.textContent = 'Selecciona archivos';
+        }
+    }
+
+    // === SESSION LOGIC ===
+
+    function startSession() {
+        const subject = state.data.subjects.find(s => s.id === state.currentSubjectId);
+        if (!subject) return;
+
+        // Gather questions
+        let pool = [];
+        subject.files.forEach(f => {
+            if (state.selectedFiles.includes(f.id)) {
+                pool = pool.concat(f.data);
+            }
+        });
+
+        // Shuffle
+        pool = shuffleArray(pool);
+
+        // Limit
+        if (state.sessionCount !== 'all') {
+            const limit = parseInt(state.sessionCount);
+            if (limit < pool.length) {
+                pool = pool.slice(0, limit);
+            }
+        }
+
+        // Shuffle Options
+        pool.forEach(q => {
+            if (q.options) q.options = shuffleArray(q.options);
+        });
+
+        state.sessionQuestions = pool;
+        state.currentQuestionIndex = 0;
+        state.score = 0;
+        state.userAnswers = [];
+
+        switchView('quiz');
+
+        if (state.sessionMode === 'test') {
+            renderQuestion();
+        } else {
             renderStudyMode();
         }
     }
 
-    // --- TEST MODE LOGIC ---
-
     function renderQuestion() {
-        const question = currentQuizQuestions[currentQuestionIndex];
-        userAnswers = [];
+        const q = state.sessionQuestions[state.currentQuestionIndex];
+        state.userAnswers = [];
 
-        // Update progress
-        const progress = ((currentQuestionIndex) / currentQuizQuestions.length) * 100;
-        progressBar.style.width = `${progress}%`;
+        const progress = ((state.currentQuestionIndex) / state.sessionQuestions.length) * 100;
+        els.progressBar.style.width = `${progress}%`;
+        els.progressText.textContent = `${state.currentQuestionIndex + 1}/${state.sessionQuestions.length}`;
 
-        // Reset UI
-        submitBtn.classList.remove('hidden');
-        nextBtn.classList.add('hidden');
-        questionContainer.classList.remove('study-mode-container'); // Ensure standard view
+        els.submitBtn.classList.remove('hidden');
+        els.nextBtn.classList.add('hidden');
+        els.questionContainer.classList.remove('study-mode');
 
-        // Type label
-        const typeLabels = { 'single': 'Opción Única', 'multiple': 'Opción Múltiple', 'boolean': 'Verdadero / Falso' };
-        const typeLabel = typeLabels[question.type] || 'Pregunta';
+        const typeLabels = { 'single': 'Opción Única', 'multiple': 'Opción Múltiple', 'boolean': 'V/F' };
 
-        let html = `
+        els.questionContainer.innerHTML = `
             <div class="question-header">
-                <span class="question-number">Pregunta ${currentQuestionIndex + 1} de ${currentQuizQuestions.length}</span>
-                <span class="question-type-badge">${typeLabel}</span>
+                <span class="question-type-badge">${typeLabels[q.type] || 'Pregunta'}</span>
             </div>
-            <h2 class="question-text">${question.text}</h2>
+            <h2 class="question-text">${q.text}</h2>
             <div class="options-grid">
+                ${q.options.map(opt => `
+                    <div class="option-item" data-id="${opt.id}">
+                        ${opt.text}
+                    </div>
+                `).join('')}
+            </div>
+            <div id="feedback-area"></div>
         `;
 
-        question.options.forEach(opt => {
-            html += `
-                <div class="option-item" data-id="${opt.id}" onclick="selectOption('${opt.id}', '${question.type}', this)">
-                    <div class="option-content">${opt.text}</div>
-                </div>
-            `;
-        });
-
-        html += `</div><div id="feedback-container"></div>`;
-        questionContainer.innerHTML = html;
-
-        // Re-bind click event
-        const optionsGrid = questionContainer.querySelector('.options-grid');
-        optionsGrid.addEventListener('click', (e) => {
-            const item = e.target.closest('.option-item');
-            if (item) {
-                handleSelection(item.dataset.id, question.type, item);
-            }
+        els.questionContainer.querySelectorAll('.option-item').forEach(item => {
+            item.addEventListener('click', () => handleOptionClick(item, q.type));
         });
     }
 
-    function handleSelection(id, type, element) {
-        if (submitBtn.classList.contains('hidden')) return;
+    function handleOptionClick(item, type) {
+        if (els.submitBtn.classList.contains('hidden')) return;
 
+        const id = item.dataset.id;
         if (type === 'single' || type === 'boolean') {
-            document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
-            userAnswers = [id];
-            element.classList.add('selected');
+            els.questionContainer.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
+            state.userAnswers = [id];
+            item.classList.add('selected');
         } else if (type === 'multiple') {
-            const index = userAnswers.indexOf(id);
-            if (index === -1) {
-                userAnswers.push(id);
-                element.classList.add('selected');
+            if (state.userAnswers.includes(id)) {
+                state.userAnswers = state.userAnswers.filter(a => a !== id);
+                item.classList.remove('selected');
             } else {
-                userAnswers.splice(index, 1);
-                element.classList.remove('selected');
+                state.userAnswers.push(id);
+                item.classList.add('selected');
             }
         }
     }
 
     function checkAnswer() {
-        const question = currentQuizQuestions[currentQuestionIndex];
-        const correctIds = question.options.filter(o => o.isCorrect).map(o => o.id);
+        const q = state.sessionQuestions[state.currentQuestionIndex];
+        const correctIds = q.options.filter(o => o.isCorrect).map(o => o.id);
 
         let isCorrect = false;
         if (correctIds.length === 0) {
-            isCorrect = userAnswers.length === 0;
+            isCorrect = state.userAnswers.length === 0;
         } else {
-            if (userAnswers.length === correctIds.length) {
-                isCorrect = userAnswers.every(ans => correctIds.includes(ans));
+            if (state.userAnswers.length === correctIds.length) {
+                isCorrect = state.userAnswers.every(ans => correctIds.includes(ans));
             }
         }
 
-        if (isCorrect) score++;
+        if (isCorrect) state.score++;
 
-        // Visual Feedback
-        document.querySelectorAll('.option-item').forEach(el => {
-            const id = el.dataset.id;
-            const isSelected = userAnswers.includes(id);
-            const isActuallyCorrect = correctIds.includes(id);
+        els.questionContainer.querySelectorAll('.option-item').forEach(item => {
+            const id = item.dataset.id;
+            const isSelected = state.userAnswers.includes(id);
+            const isReal = correctIds.includes(id);
 
-            if (isActuallyCorrect) {
-                el.classList.add('correct');
-            } else if (isSelected && !isActuallyCorrect) {
-                el.classList.add('incorrect');
-            }
-            el.style.cursor = 'default';
+            if (isReal) item.classList.add('correct');
+            else if (isSelected) item.classList.add('incorrect');
+            item.style.cursor = 'default';
         });
 
-        // Feedback Text
-        const feedbackContainer = document.getElementById('feedback-container');
-        const feedbackMsg = isCorrect ? '¡Correcto!' : 'Incorrecto';
-
-        feedbackContainer.innerHTML = `
+        const fbArea = document.getElementById('feedback-area');
+        fbArea.innerHTML = `
             <div class="feedback-text ${isCorrect ? 'correct-msg' : 'incorrect-msg'}">
-                <strong>${feedbackMsg}</strong>
-                <p>${question.feedback || ''}</p>
-            </div>`;
+                <strong>${isCorrect ? '¡Correcto!' : 'Incorrecto'}</strong>
+                <p>${q.feedback || ''}</p>
+            </div>
+        `;
 
-        submitBtn.classList.add('hidden');
-        nextBtn.classList.remove('hidden');
+        els.submitBtn.classList.add('hidden');
+        els.nextBtn.classList.remove('hidden');
     }
 
     function nextQuestion() {
-        // Progress Alert roughly every 10 questions
-        const questionsAnswered = currentQuestionIndex + 1;
-        if (questionsAnswered % 10 === 0 && questionsAnswered < currentQuizQuestions.length) {
-            alert(`--- PROGRESO ---\nHas contestado ${questionsAnswered} preguntas.\nPuntuación parcial: ${score}/${questionsAnswered} (${Math.round((score / questionsAnswered) * 100)}%)`);
-        }
-
-        currentQuestionIndex++;
-        if (currentQuestionIndex < currentQuizQuestions.length) {
+        state.currentQuestionIndex++;
+        if (state.currentQuestionIndex < state.sessionQuestions.length) {
             renderQuestion();
         } else {
             showResults();
         }
     }
 
-    function showResults() {
-        quizSection.classList.add('hidden');
-        resultsSection.classList.remove('hidden');
-
-        const percentage = Math.round((score / currentQuizQuestions.length) * 100) || 0;
-        document.getElementById('score-value').textContent = percentage;
-
-        document.getElementById('score-details').textContent =
-            `Has acertado ${score} de ${currentQuizQuestions.length} preguntas.`;
-    }
-
-    // --- STUDY MODE LOGIC ---
-
     function renderStudyMode() {
-        // Hide standard controls
-        submitBtn.classList.add('hidden');
-        nextBtn.classList.add('hidden');
-        progressBar.style.width = '100%';
+        els.progressBar.style.width = '100%';
+        els.progressText.textContent = 'Modo Estudio';
+        els.submitBtn.classList.add('hidden');
+        els.nextBtn.classList.add('hidden');
 
-        questionContainer.innerHTML = '';
-
-        let htmlContent = '<div class="study-list">';
-
-        currentQuizQuestions.forEach((q, index) => {
-            const correctOpts = q.options.filter(o => o.isCorrect).map(o => o.text).join(', ');
-            // If no correct options (trick question)
-            const answerText = correctOpts || "Ninguna opción es correcta (Selección Vacía)";
-
-            htmlContent += `
-                <div class="study-item">
-                    <h3>${index + 1}. ${q.text}</h3>
-                    <ul>
-                        ${q.options.map(o => `<li style="${o.isCorrect ? 'color: var(--success); font-weight:bold;' : ''}">${o.text}</li>`).join('')}
+        let html = '<div class="study-list">';
+        state.sessionQuestions.forEach((q, i) => {
+            const correctText = q.options.filter(o => o.isCorrect).map(o => o.text).join(', ') || "Ninguna";
+            html += `
+                <div class="study-item card" style="margin-bottom:1rem; border:1px solid var(--surface-border)">
+                    <h3>${i + 1}. ${q.text}</h3>
+                    <ul style="padding-left:1.5rem; margin-bottom:0.5rem">
+                        ${q.options.map(o => `<li style="${o.isCorrect ? 'color:var(--success);font-weight:700' : ''}">${o.text}</li>`).join('')}
                     </ul>
-                    <div class="correct-answer">Respuesta Correcta: ${answerText}</div>
-                    <p class="feedback-text" style="background:#f1f5f9; padding:0.5rem; font-size:0.9rem;">${q.feedback || ''}</p>
-                </div>
-            `;
+                    <div style="font-size:0.9rem; color:var(--text-secondary)">Respuesta: ${correctText}</div>
+                    <p style="background:#f1f5f9; padding:0.5rem; margin-top:0.5rem; border-radius:4px">${q.feedback || ''}</p>
+                </div>`;
         });
+        html += '</div>';
 
-        htmlContent += '</div>';
-        questionContainer.innerHTML = htmlContent;
+        // Add giant finish button
+        html += `<div style="text-align:center; padding:2rem"><button class="btn primary" onclick="document.getElementById('btn-exit-quiz').click()">Terminar Repaso</button></div>`;
 
-        // Add a "Finish" button at the bottom of the container?
-        // Or just leave the restart button used in results.
-        // We can show the results section directly? Or just a button to go back.
-        // Let's add a "Volver" button at the bottom of the study list
-        const backBtn = document.createElement('button');
-        backBtn.className = 'btn primary';
-        backBtn.textContent = 'Volver al Inicio';
-        backBtn.style.marginTop = '2rem';
-        backBtn.onclick = restartApp;
-        questionContainer.appendChild(backBtn);
+        els.questionContainer.innerHTML = html;
+        els.questionContainer.style.background = 'transparent';
+        els.questionContainer.style.boxShadow = 'none';
+        els.questionContainer.style.border = 'none';
     }
 
-    function restartApp() {
-        allQuestions = [];
-        currentQuizQuestions = [];
-        resultsSection.classList.add('hidden');
-        quizSection.classList.add('hidden');
-        setupSection.classList.add('hidden');
-        uploadSection.classList.remove('hidden');
-        fileInput.value = '';
+    function showResults() {
+        switchView('results');
+        const pct = Math.round((state.score / state.sessionQuestions.length) * 100) || 0;
+        const offset = 100 - (pct);
+        els.scoreCircle.style.strokeDashoffset = offset;
+        els.resultPercentage.textContent = `${pct}%`;
+        els.resultDetails.textContent = `Acertaste ${state.score} de ${state.sessionQuestions.length}`;
+    }
+
+    // === UTILS ===
+    function showToast(msg, type = 'info') {
+        els.toast.textContent = msg;
+        els.toast.classList.add('visible');
+        setTimeout(() => els.toast.classList.remove('visible'), 3000);
+    }
+
+    function switchView(name) {
+        Object.values(views).forEach(el => el.classList.remove('active'));
+        views[name].classList.add('active');
+    }
+
+    function shuffleArray(arr) {
+        return [...arr].sort(() => Math.random() - 0.5);
     }
 });

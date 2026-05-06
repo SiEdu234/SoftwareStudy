@@ -1,4 +1,5 @@
-const STORAGE_KEY = 'studyflow_data_v1';
+// API URL
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:3000/api' : '/api';
 
 document.addEventListener('DOMContentLoaded', () => {
     // === STATE ===
@@ -46,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === INITIALIZATION ===
     loadData();
-    renderDashboard();
 
     // === EVENT LISTENERS ===
 
@@ -95,43 +95,48 @@ document.addEventListener('DOMContentLoaded', () => {
     els.returnSubjectBtn.addEventListener('click', () => switchView('subject'));
     els.retryBtn.addEventListener('click', startSession);
 
-    // === STORAGE MGR ===
-    function loadData() {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-            try {
-                state.data = JSON.parse(raw);
-                if (!state.data.subjects) state.data.subjects = [];
-            } catch (e) {
-                console.error("Data corrupt, resetting", e);
-                state.data = { subjects: [] };
-            }
+    // === API / DATA LOGIC ===
+    
+    async function loadData() {
+        try {
+            const res = await fetch(`${API_URL}/subjects`);
+            if (!res.ok) throw new Error('Error de red');
+            const subjects = await res.json();
+            state.data.subjects = subjects;
+            renderDashboard();
+        } catch (err) {
+            console.error("No se pudo cargar la info de la BD:", err);
+            showToast("Error de conexión con el servidor", "error");
         }
     }
 
-    function saveData() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+    async function createSubject(name) {
+        const id = crypto.randomUUID();
+        try {
+            await fetch(`${API_URL}/subjects`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, name })
+            });
+            await loadData();
+            showToast(`Materia "${name}" creada`);
+        } catch (err) {
+            console.error(err);
+            showToast("Error al crear materia", "error");
+        }
     }
 
-    // === LOGIC ===
-
-    function createSubject(name) {
-        const newSubject = {
-            id: crypto.randomUUID(),
-            name: name,
-            files: []
-        };
-        state.data.subjects.push(newSubject);
-        saveData();
-        renderDashboard();
-        showToast(`Materia "${name}" creada`);
-    }
-
-    function deleteSubject(id) {
-        if (confirm("¿Eliminar materia y todos sus archivos?")) {
-            state.data.subjects = state.data.subjects.filter(s => s.id !== id);
-            saveData();
-            renderDashboard();
+    async function deleteSubject(id) {
+        if (confirm("¿Eliminar materia y todos sus archivos de forma permanente?")) {
+            try {
+                await fetch(`${API_URL}/subjects/${id}`, { method: 'DELETE' });
+                if (state.currentSubjectId === id) switchView('dashboard');
+                await loadData();
+                showToast("Materia eliminada");
+            } catch (err) {
+                console.error(err);
+                showToast("Error al eliminar", "error");
+            }
         }
     }
 
@@ -154,46 +159,57 @@ document.addEventListener('DOMContentLoaded', () => {
         if (subjectIndex === -1) return;
 
         let addedCount = 0;
+        showToast("Subiendo archivos...");
+        
         for (const file of files) {
             try {
                 const text = await file.text();
                 const json = JSON.parse(text);
 
                 if (!json.questions || !Array.isArray(json.questions)) {
-                    throw new Error("Formato inválido");
+                    throw new Error("Formato inválido. Debe tener un arreglo 'questions'.");
                 }
 
-                const newFile = {
-                    id: crypto.randomUUID(),
+                const fileId = crypto.randomUUID();
+                const payload = {
+                    id: fileId,
                     name: file.name.replace('.json', ''),
-                    data: json.questions, // Store only questions array to save space? Or full obj
-                    date: new Date().toISOString()
+                    data: json.questions
                 };
 
-                state.data.subjects[subjectIndex].files.push(newFile);
+                await fetch(`${API_URL}/subjects/${state.currentSubjectId}/files`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
                 addedCount++;
             } catch (err) {
                 console.error(err);
-                showToast(`Error en ${file.name}`, 'error');
+                showToast(`Error en ${file.name}: ${err.message}`, 'error');
             }
         }
 
         if (addedCount > 0) {
-            saveData();
+            await loadData();
+            // Refrescar vista
             renderFilesList();
-            showToast(`${addedCount} archivos subidos`);
+            showToast(`${addedCount} archivos subidos correctamente`);
         }
         els.importInput.value = '';
     }
 
-    function deleteFile(fileId) {
-        const subjectIndex = state.data.subjects.findIndex(s => s.id === state.currentSubjectId);
-        if (subjectIndex === -1) return;
-
-        if (confirm("¿Eliminar archivo?")) {
-            state.data.subjects[subjectIndex].files = state.data.subjects[subjectIndex].files.filter(f => f.id !== fileId);
-            saveData();
-            renderFilesList();
+    async function deleteFile(fileId) {
+        if (confirm("¿Eliminar archivo permanentemente?")) {
+            try {
+                await fetch(`${API_URL}/files/${fileId}`, { method: 'DELETE' });
+                await loadData();
+                renderFilesList();
+                showToast("Archivo eliminado");
+            } catch (err) {
+                console.error(err);
+                showToast("Error al eliminar", "error");
+            }
         }
     }
 
@@ -216,21 +232,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div');
             card.className = 'quiz-card fade-in';
             card.innerHTML = `
+                <div class="card-icon"><span class="material-icons-round">auto_stories</span></div>
                 <h3>${subject.name}</h3>
-                <div class="card-meta">${subject.files.length} archivos</div>
+                <div class="card-meta">${subject.files.length} cuestionario${subject.files.length !== 1 ? 's' : ''}</div>
             `;
 
-            // Delete Subject Button (Top Right)
+            // Delete Subject Button
             const delBtn = document.createElement('button');
-            delBtn.innerHTML = '<span class="material-icons-round">delete</span>';
+            delBtn.innerHTML = '<span class="material-icons-round">delete_outline</span>';
             delBtn.className = 'delete-btn';
-            delBtn.style.position = 'absolute';
-            delBtn.style.top = '1rem';
-            delBtn.style.right = '1rem';
             delBtn.onclick = (e) => { e.stopPropagation(); deleteSubject(subject.id); };
 
             card.appendChild(delBtn);
-
             card.addEventListener('click', () => openSubject(subject.id));
             els.subjectsGrid.appendChild(card);
         });
@@ -241,41 +254,48 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!subject) return;
 
         els.filesList.innerHTML = '';
-        state.selectedFiles = []; // Reset logic
+        
+        // Remove deleted files from selection
+        state.selectedFiles = state.selectedFiles.filter(id => subject.files.some(f => f.id === id));
         updateStartButton();
 
         if (subject.files.length === 0) {
-            els.filesList.innerHTML = `<p style="text-align:center; color:var(--text-secondary); padding:2rem;">No hay archivos. ¡Sube uno!</p>`;
+            els.filesList.innerHTML = `<p style="text-align:center; color:var(--text-secondary); padding:2rem;">No hay cuestionarios. ¡Sube un JSON estructurado!</p>`;
             return;
         }
 
         subject.files.forEach(file => {
             const item = document.createElement('div');
             item.className = 'file-item';
+            
+            if (state.selectedFiles.includes(file.id)) {
+                item.classList.add('selected');
+            }
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.value = file.id;
-            checkbox.addEventListener('change', () => toggleFileSelection(file.id));
+            checkbox.checked = state.selectedFiles.includes(file.id);
+            checkbox.addEventListener('change', () => toggleFileSelection(file.id, item));
 
-            const label = document.createElement('span');
-            label.textContent = `${file.name} (${file.data.length} pgs)`;
-            label.style.flex = 1;
+            const labelInfo = document.createElement('div');
+            labelInfo.className = 'file-info';
+            labelInfo.innerHTML = `<strong>${file.name}</strong><span>${file.data.length} preguntas</span>`;
 
             const trash = document.createElement('button');
-            trash.className = 'delete-btn';
+            trash.className = 'delete-btn small';
             trash.innerHTML = '<span class="material-icons-round">delete</span>';
             trash.onclick = (e) => { e.stopPropagation(); deleteFile(file.id); };
 
             item.appendChild(checkbox);
-            item.appendChild(label);
+            item.appendChild(labelInfo);
             item.appendChild(trash);
 
             // Click row to toggle
             item.addEventListener('click', (e) => {
                 if (e.target !== checkbox && e.target !== trash && !trash.contains(e.target)) {
                     checkbox.checked = !checkbox.checked;
-                    toggleFileSelection(file.id);
+                    toggleFileSelection(file.id, item);
                 }
             });
 
@@ -283,11 +303,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function toggleFileSelection(fileId) {
+    function toggleFileSelection(fileId, itemEl) {
         if (state.selectedFiles.includes(fileId)) {
             state.selectedFiles = state.selectedFiles.filter(id => id !== fileId);
+            if(itemEl) itemEl.classList.remove('selected');
         } else {
             state.selectedFiles.push(fileId);
+            if(itemEl) itemEl.classList.add('selected');
         }
         updateStartButton();
     }
@@ -296,10 +318,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const count = state.selectedFiles.length;
         if (count > 0) {
             els.startSessionBtn.disabled = false;
-            els.startSessionBtn.textContent = `Comenzar con ${count} archivos`;
+            els.startSessionBtn.textContent = `Comenzar con ${count} cuestionarios`;
+            els.startSessionBtn.classList.add('pulse');
         } else {
             els.startSessionBtn.disabled = true;
-            els.startSessionBtn.textContent = 'Selecciona archivos';
+            els.startSessionBtn.textContent = 'Selecciona cuestionarios';
+            els.startSessionBtn.classList.remove('pulse');
         }
     }
 
@@ -309,7 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const subject = state.data.subjects.find(s => s.id === state.currentSubjectId);
         if (!subject) return;
 
-        // Gather questions
         let pool = [];
         subject.files.forEach(f => {
             if (state.selectedFiles.includes(f.id)) {
@@ -317,18 +340,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Shuffle
+        if (pool.length === 0) return;
+
         pool = shuffleArray(pool);
 
-        // Limit
         if (state.sessionCount !== 'all') {
             const limit = parseInt(state.sessionCount);
-            if (limit < pool.length) {
-                pool = pool.slice(0, limit);
-            }
+            if (limit < pool.length) pool = pool.slice(0, limit);
         }
 
-        // Shuffle Options
         pool.forEach(q => {
             if (q.options) q.options = shuffleArray(q.options);
         });
@@ -358,18 +378,25 @@ document.addEventListener('DOMContentLoaded', () => {
         els.submitBtn.classList.remove('hidden');
         els.nextBtn.classList.add('hidden');
         els.questionContainer.classList.remove('study-mode');
+        els.questionContainer.classList.add('fade-in');
 
-        const typeLabels = { 'single': 'Opción Única', 'multiple': 'Opción Múltiple', 'boolean': 'V/F' };
+        // Reiniciar animacion fade
+        els.questionContainer.style.animation = 'none';
+        els.questionContainer.offsetHeight; // trigger reflow
+        els.questionContainer.style.animation = null; 
+
+        const typeLabels = { 'single': 'Respuesta Única', 'multiple': 'Selección Múltiple', 'boolean': 'Verdadero o Falso' };
 
         els.questionContainer.innerHTML = `
             <div class="question-header">
-                <span class="question-type-badge">${typeLabels[q.type] || 'Pregunta'}</span>
+                <span class="question-type-badge ${q.type}">${typeLabels[q.type] || 'Pregunta'}</span>
             </div>
             <h2 class="question-text">${q.text}</h2>
-            <div class="options-grid">
-                ${q.options.map(opt => `
+            <div class="options-grid ${q.options.length <= 2 ? 'two-cols' : ''}">
+                ${q.options.map((opt, i) => `
                     <div class="option-item" data-id="${opt.id}">
-                        ${opt.text}
+                        <div class="option-letter">${String.fromCharCode(65 + i)}</div>
+                        <div class="option-content">${opt.text}</div>
                     </div>
                 `).join('')}
             </div>
@@ -382,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleOptionClick(item, type) {
-        if (els.submitBtn.classList.contains('hidden')) return;
+        if (els.submitBtn.classList.contains('hidden')) return; // Ya se respondió
 
         const id = item.dataset.id;
         if (type === 'single' || type === 'boolean') {
@@ -402,6 +429,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function checkAnswer() {
         const q = state.sessionQuestions[state.currentQuestionIndex];
+        
+        // Si no hay respuesta del usuario, no hacer nada (opcional: forzar a que elija)
+        if (state.userAnswers.length === 0) {
+            showToast('Selecciona al menos una respuesta', 'error');
+            return;
+        }
+
         const correctIds = q.options.filter(o => o.isCorrect).map(o => o.id);
 
         let isCorrect = false;
@@ -422,14 +456,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (isReal) item.classList.add('correct');
             else if (isSelected) item.classList.add('incorrect');
-            item.style.cursor = 'default';
+            
+            // Disable clicks
+            item.style.pointerEvents = 'none';
         });
 
         const fbArea = document.getElementById('feedback-area');
         fbArea.innerHTML = `
-            <div class="feedback-text ${isCorrect ? 'correct-msg' : 'incorrect-msg'}">
-                <strong>${isCorrect ? '¡Correcto!' : 'Incorrecto'}</strong>
-                <p>${q.feedback || ''}</p>
+            <div class="feedback-text ${isCorrect ? 'correct-msg' : 'incorrect-msg'} fade-in">
+                <div class="feedback-icon">
+                    <span class="material-icons-round">${isCorrect ? 'check_circle' : 'cancel'}</span>
+                </div>
+                <div class="feedback-content">
+                    <strong>${isCorrect ? '¡Excelente!' : 'Respuesta Incorrecta'}</strong>
+                    ${q.feedback ? `<p>${q.feedback}</p>` : ''}
+                </div>
             </div>
         `;
 
@@ -448,27 +489,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderStudyMode() {
         els.progressBar.style.width = '100%';
-        els.progressText.textContent = 'Modo Estudio';
+        els.progressText.textContent = 'Modo Estudio Activo';
         els.submitBtn.classList.add('hidden');
         els.nextBtn.classList.add('hidden');
 
-        let html = '<div class="study-list">';
+        let html = '<div class="study-list fade-in">';
         state.sessionQuestions.forEach((q, i) => {
-            const correctText = q.options.filter(o => o.isCorrect).map(o => o.text).join(', ') || "Ninguna";
+            const correctOpts = q.options.filter(o => o.isCorrect);
+            const correctText = correctOpts.length > 0 
+                ? correctOpts.map(o => `• ${o.text}`).join('<br>') 
+                : "Ninguna";
+
             html += `
-                <div class="study-item card" style="margin-bottom:1rem; border:1px solid var(--surface-border)">
+                <div class="study-item card">
+                    <div class="study-badge ${q.type}">${q.type === 'single' ? 'Respuesta Única' : 'Múltiple'}</div>
                     <h3>${i + 1}. ${q.text}</h3>
-                    <ul style="padding-left:1.5rem; margin-bottom:0.5rem">
-                        ${q.options.map(o => `<li style="${o.isCorrect ? 'color:var(--success);font-weight:700' : ''}">${o.text}</li>`).join('')}
-                    </ul>
-                    <div style="font-size:0.9rem; color:var(--text-secondary)">Respuesta: ${correctText}</div>
-                    <p style="background:#f1f5f9; padding:0.5rem; margin-top:0.5rem; border-radius:4px">${q.feedback || ''}</p>
+                    <div class="study-answer">
+                        <strong>Respuesta correcta:</strong><br>
+                        ${correctText}
+                    </div>
+                    ${q.feedback ? `
+                    <div class="study-feedback">
+                        <strong>Explicación:</strong>
+                        <p>${q.feedback}</p>
+                    </div>` : ''}
                 </div>`;
         });
         html += '</div>';
 
-        // Add giant finish button
-        html += `<div style="text-align:center; padding:2rem"><button class="btn primary" onclick="document.getElementById('btn-exit-quiz').click()">Terminar Repaso</button></div>`;
+        html += `<div style="text-align:center; padding:2rem"><button class="btn primary large pulse" onclick="document.getElementById('btn-exit-quiz').click()">Terminar Repaso</button></div>`;
 
         els.questionContainer.innerHTML = html;
         els.questionContainer.style.background = 'transparent';
@@ -482,13 +531,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const offset = 100 - (pct);
         els.scoreCircle.style.strokeDashoffset = offset;
         els.resultPercentage.textContent = `${pct}%`;
-        els.resultDetails.textContent = `Acertaste ${state.score} de ${state.sessionQuestions.length}`;
+        els.resultDetails.innerHTML = `Has acertado <strong>${state.score}</strong> de <strong>${state.sessionQuestions.length}</strong> preguntas.`;
     }
 
     // === UTILS ===
     function showToast(msg, type = 'info') {
         els.toast.textContent = msg;
-        els.toast.classList.add('visible');
+        els.toast.className = `toast visible ${type}`;
         setTimeout(() => els.toast.classList.remove('visible'), 3000);
     }
 

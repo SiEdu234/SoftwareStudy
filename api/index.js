@@ -31,9 +31,9 @@ async function initDB() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
-        console.log('✅ Base de datos inicializada');
+        console.log('Base de datos inicializada');
     } catch (error) {
-        console.error('❌ Error inicializando BD:', error);
+        console.error('Error inicializando BD:', error);
     }
 }
 initDB();
@@ -114,7 +114,7 @@ app.delete('/api/files/:id', async (req, res) => {
 if (process.env.NODE_ENV !== 'production') {
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
-        console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+        console.log(`Servidor corriendo en http://localhost:${PORT}`);
     });
 }
 module.exports = app;

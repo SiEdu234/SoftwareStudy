@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { Pool } = require('pg');
+const { Pool } = require('@neondatabase/serverless');
 
 const app = express();
 app.use(cors());

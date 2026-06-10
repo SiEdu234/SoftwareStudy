@@ -30,11 +30,41 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionQuestions: [],
         currentQuestionIndex: 0,
         score: 0,
-        maxScore: 0, // Nuevo: calculamos puntos totales
+        maxScore: 0,
         userAnswers: [],
         sessionMode: 'test',
-        sessionCount: 'all'
+        sessionCount: 'all',
+        isAnswerSubmitted: false
     };
+
+    function saveState() {
+        const stateToSave = {
+            currentSubjectId: state.currentSubjectId,
+            selectedFiles: state.selectedFiles,
+            sessionQuestions: state.sessionQuestions,
+            currentQuestionIndex: state.currentQuestionIndex,
+            score: state.score,
+            maxScore: state.maxScore,
+            userAnswers: state.userAnswers,
+            sessionMode: state.sessionMode,
+            sessionCount: state.sessionCount,
+            isAnswerSubmitted: state.isAnswerSubmitted,
+            activeView: document.querySelector('.view.active')?.id || 'dashboard-view'
+        };
+        localStorage.setItem('vagos_state', JSON.stringify(stateToSave));
+    }
+
+    function restoreState() {
+        const saved = localStorage.getItem('vagos_state');
+        if (!saved) return false;
+        try {
+            const parsed = JSON.parse(saved);
+            Object.assign(state, parsed);
+            return parsed;
+        } catch (e) {
+            return false;
+        }
+    }
 
     // === DOM ELEMENTS ===
     const views = {
@@ -85,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
             state.sessionCount = e.target.dataset.count;
+            saveState();
         });
     });
 
@@ -93,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.segment').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
             state.sessionMode = e.target.dataset.mode;
+            saveState();
         });
     });
 
@@ -102,6 +134,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     els.exitQuizBtn.addEventListener('click', () => {
         if (confirm("¿CONFIRMAR ABORTO DE SESIÓN? LOS DATOS SERÁN PURGADOS.")) {
+            state.sessionQuestions = [];
+            state.userAnswers = [];
+            state.score = 0;
+            state.isAnswerSubmitted = false;
             switchView('subject');
         }
     });
@@ -117,7 +153,35 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!res.ok) throw new Error('Network err');
             const subjects = await res.json();
             state.data.subjects = subjects;
-            renderDashboard();
+            
+            const restored = restoreState();
+            if (restored) {
+                // Config UI states for restored data
+                document.querySelectorAll('.option-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.count === state.sessionCount);
+                });
+                document.querySelectorAll('.segment').forEach(b => {
+                    b.classList.toggle('active', b.dataset.mode === state.sessionMode);
+                });
+
+                if (restored.activeView === 'quiz-view' && state.sessionQuestions.length > 0) {
+                    switchView('quiz');
+                    if (state.sessionMode === 'test') {
+                        renderQuestion();
+                    } else {
+                        renderStudyMode();
+                    }
+                } else if (restored.activeView === 'results-view' && state.sessionQuestions.length > 0) {
+                    switchView('results');
+                    showResults(true);
+                } else if (restored.activeView === 'subject-view' && state.currentSubjectId) {
+                    openSubject(state.currentSubjectId, true);
+                } else {
+                    renderDashboard();
+                }
+            } else {
+                renderDashboard();
+            }
         } catch (err) {
             console.error("Error BD:", err);
             showToast("FALLO_DE_CONEXIÓN", "error");
@@ -154,14 +218,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function openSubject(id) {
+    function openSubject(id, isRestore = false) {
         state.currentSubjectId = id;
         const subject = state.data.subjects.find(s => s.id === id);
-        if (!subject) return;
+        if (!subject) {
+            switchView('dashboard');
+            return;
+        }
 
         els.subjectTitle.textContent = subject.name;
         els.subjectTitle.setAttribute('data-text', subject.name);
-        state.selectedFiles = [];
+        if (!isRestore) state.selectedFiles = [];
         renderFilesList();
         switchView('subject');
     }
@@ -333,6 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(rowEl) rowEl.classList.add('selected');
         }
         updateStartButton();
+        saveState();
     }
 
     function updateStartButton() {
@@ -375,7 +443,9 @@ document.addEventListener('DOMContentLoaded', () => {
         state.score = 0;
         state.maxScore = pool.reduce((acc, q) => acc + (q.points || 1), 0);
         state.userAnswers = [];
+        state.isAnswerSubmitted = false;
 
+        saveState();
         switchView('quiz');
 
         if (state.sessionMode === 'test') renderQuestion();
@@ -384,8 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderQuestion() {
         const q = state.sessionQuestions[state.currentQuestionIndex];
-        state.userAnswers = [];
-
+        
         const progress = ((state.currentQuestionIndex) / state.sessionQuestions.length) * 100;
         els.progressBar.style.width = `${progress}%`;
         els.progressText.textContent = `${state.currentQuestionIndex + 1} / ${state.sessionQuestions.length}`;
@@ -424,6 +493,16 @@ document.addEventListener('DOMContentLoaded', () => {
         els.questionContainer.querySelectorAll('.opt-box').forEach(item => {
             item.addEventListener('click', () => handleOptionClick(item, q.type));
         });
+
+        if (state.isAnswerSubmitted) {
+            applyFeedbackVisuals(q);
+        } else if (state.userAnswers.length > 0) {
+            els.questionContainer.querySelectorAll('.opt-box').forEach(item => {
+                if (state.userAnswers.includes(item.dataset.id)) {
+                    item.classList.add('selected');
+                }
+            });
+        }
     }
 
     function handleOptionClick(item, type) {
@@ -443,16 +522,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.classList.add('selected');
             }
         }
+        saveState();
     }
 
-    function checkAnswer() {
-        const q = state.sessionQuestions[state.currentQuestionIndex];
-        
-        if (state.userAnswers.length === 0) {
-            showToast('DEBES SELECCIONAR UN NODO', 'error');
-            return;
-        }
-
+    function applyFeedbackVisuals(q) {
         const correctIds = q.options.filter(o => o.isCorrect).map(o => o.id);
 
         let isCorrect = false;
@@ -463,9 +536,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 isCorrect = state.userAnswers.every(ans => correctIds.includes(ans));
             }
         }
-
-        const pts = q.points || 1;
-        if (isCorrect) state.score += pts;
 
         els.questionContainer.querySelectorAll('.opt-box').forEach(item => {
             const id = item.dataset.id;
@@ -498,8 +568,43 @@ document.addEventListener('DOMContentLoaded', () => {
         els.nextBtn.classList.remove('hidden');
     }
 
+    function checkAnswer() {
+        const q = state.sessionQuestions[state.currentQuestionIndex];
+        
+        if (state.userAnswers.length === 0) {
+            showToast('DEBES SELECCIONAR UN NODO', 'error');
+            return;
+        }
+
+        if (!state.isAnswerSubmitted) {
+            const correctIds = q.options.filter(o => o.isCorrect).map(o => o.id);
+            let isCorrect = false;
+            if (correctIds.length === 0) {
+                isCorrect = state.userAnswers.length === 0;
+            } else {
+                if (state.userAnswers.length === correctIds.length) {
+                    isCorrect = state.userAnswers.every(ans => correctIds.includes(ans));
+                }
+            }
+
+            const pts = q.points || 1;
+            if (isCorrect) state.score += pts;
+
+            state.isAnswerSubmitted = true;
+            saveState();
+        }
+
+        applyFeedbackVisuals(q);
+    }
+
+
+
     function nextQuestion() {
         state.currentQuestionIndex++;
+        state.isAnswerSubmitted = false;
+        state.userAnswers = [];
+        saveState();
+        
         if (state.currentQuestionIndex < state.sessionQuestions.length) {
             renderQuestion();
         } else {
@@ -547,8 +652,8 @@ document.addEventListener('DOMContentLoaded', () => {
         els.questionContainer.style.padding = '0';
     }
 
-    function showResults() {
-        switchView('results');
+    function showResults(isRestore = false) {
+        if (!isRestore) switchView('results');
         const max = state.maxScore > 0 ? state.maxScore : 1;
         const pct = Math.round((state.score / max) * 100);
         
@@ -583,6 +688,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (name !== 'quiz') {
             els.questionContainer.style = '';
         }
+        saveState();
     }
 
     function shuffleArray(arr) {

@@ -2,6 +2,26 @@
 const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:3000/api' : '/api';
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Configurar marked para que los saltos de línea simples se conviertan en <br>
+    marked.use({
+        breaks: true,
+        gfm: true
+    });
+
+    // Helper para procesar el texto y arreglar los \n literales
+    function parseMd(text) {
+        if (!text) return '';
+        // Si el JSON trae "\\n" literal (2 caracteres), lo convertimos a un salto real
+        const processed = text.replace(/\\n/g, '\n');
+        return marked.parse(processed);
+    }
+    
+    function parseMdInline(text) {
+        if (!text) return '';
+        const processed = text.replace(/\\n/g, '\n');
+        return marked.parseInline(processed);
+    }
+
     // === STATE ===
     const state = {
         data: { subjects: [] }, 
@@ -384,12 +404,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         els.questionContainer.innerHTML = `
             <div class="q-badge">${typeLabels[q.type] || 'NODO'} // ${pts} PTS</div>
-            <div class="q-text">${marked.parse(q.text)}</div>
+            <div class="q-text">${parseMd(q.text)}</div>
             <div class="opts-grid ${q.options.length <= 2 ? 'cols-2' : ''}">
                 ${q.options.map((opt, i) => `
                     <div class="opt-box" data-id="${opt.id}">
                         <div class="opt-idx">[${String.fromCharCode(65 + i)}]</div>
-                        <div class="opt-txt">${marked.parseInline(opt.text)}</div>
+                        <div class="opt-txt">${parseMdInline(opt.text)}</div>
                     </div>
                 `).join('')}
             </div>
@@ -464,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <i class="ph ${isCorrect ? 'ph-check-circle' : 'ph-x-circle'}"></i>
                 <div class="feedback-content">
                     <strong>${isCorrect ? 'RESULTADO_POSITIVO' : 'RESULTADO_NEGATIVO'}</strong>
-                    ${q.feedback ? `<div class="feedback-body sys-text">${marked.parse(q.feedback)}</div>` : ''}
+                    ${q.feedback ? `<div class="feedback-body sys-text">${parseMd(q.feedback)}</div>` : ''}
                 </div>
             </div>
         `;
@@ -497,18 +517,18 @@ document.addEventListener('DOMContentLoaded', () => {
         state.sessionQuestions.forEach((q, i) => {
             const correctOpts = q.options.filter(o => o.isCorrect);
             const correctText = correctOpts.length > 0 
-                ? correctOpts.map(o => `> ${marked.parseInline(o.text)}`).join('<br>') 
+                ? correctOpts.map(o => `> ${parseMdInline(o.text)}`).join('<br>') 
                 : "NULL";
 
             html += `
                 <div class="study-item">
                     <div class="study-badge">[${q.type}] // ${q.points || 1} PTS</div>
-                    <div class="study-q">${i + 1}. ${marked.parse(q.text)}</div>
+                    <div class="study-q">${i + 1}. ${parseMd(q.text)}</div>
                     <div class="study-ans">
                         <span class="study-ans-lbl">DATO_CORRECTO:</span>
                         ${correctText}
                     </div>
-                    ${q.feedback ? `<div class="study-expl sys-text">${marked.parse(q.feedback)}</div>` : ''}
+                    ${q.feedback ? `<div class="study-expl sys-text">${parseMd(q.feedback)}</div>` : ''}
                 </div>`;
         });
         html += '</div>';

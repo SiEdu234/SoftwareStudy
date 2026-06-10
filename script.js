@@ -159,22 +159,29 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const file of files) {
             try {
                 const text = await file.text();
-                let json = JSON.parse(text);
-
                 let questions = [];
-                // Support V2 format (object with questions array) and V1 (just array)
-                if (Array.isArray(json)) {
-                    questions = json;
-                } else if (json.questions && Array.isArray(json.questions)) {
-                    questions = json.questions;
+                let title = file.name.replace(/\.(json|xml)$/i, '');
+
+                if (file.name.toLowerCase().endsWith('.xml')) {
+                    const parsedXml = parseXMLQuiz(text);
+                    questions = parsedXml.questions;
+                    if (parsedXml.title) title = parsedXml.title;
                 } else {
-                    throw new Error("FORMATO_CORRUPTO: Se requiere un array de preguntas.");
+                    let json = JSON.parse(text);
+                    if (Array.isArray(json)) {
+                        questions = json;
+                    } else if (json.questions && Array.isArray(json.questions)) {
+                        questions = json.questions;
+                        if (json.title) title = json.title;
+                    } else {
+                        throw new Error("FORMATO_CORRUPTO: Se requiere un array de preguntas.");
+                    }
                 }
 
                 const fileId = crypto.randomUUID();
                 const payload = {
                     id: fileId,
-                    name: json.title || file.name.replace('.json', ''),
+                    name: title,
                     data: questions
                 };
 
@@ -377,17 +384,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         els.questionContainer.innerHTML = `
             <div class="q-badge">${typeLabels[q.type] || 'NODO'} // ${pts} PTS</div>
-            <h2 class="q-text">${q.text}</h2>
+            <div class="q-text">${marked.parse(q.text)}</div>
             <div class="opts-grid ${q.options.length <= 2 ? 'cols-2' : ''}">
                 ${q.options.map((opt, i) => `
                     <div class="opt-box" data-id="${opt.id}">
                         <div class="opt-idx">[${String.fromCharCode(65 + i)}]</div>
-                        <div class="opt-txt">${opt.text}</div>
+                        <div class="opt-txt">${marked.parseInline(opt.text)}</div>
                     </div>
                 `).join('')}
             </div>
             <div id="feedback-area"></div>
         `;
+
+        // Highlight code blocks
+        els.questionContainer.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
 
         els.questionContainer.querySelectorAll('.opt-box').forEach(item => {
             item.addEventListener('click', () => handleOptionClick(item, q.type));
@@ -452,10 +464,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <i class="ph ${isCorrect ? 'ph-check-circle' : 'ph-x-circle'}"></i>
                 <div class="feedback-content">
                     <strong>${isCorrect ? 'RESULTADO_POSITIVO' : 'RESULTADO_NEGATIVO'}</strong>
-                    ${q.feedback ? `<p>${q.feedback}</p>` : ''}
+                    ${q.feedback ? `<div class="feedback-body sys-text">${marked.parse(q.feedback)}</div>` : ''}
                 </div>
             </div>
         `;
+        
+        // Highlight code blocks in feedback
+        fbArea.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
 
         els.submitBtn.classList.add('hidden');
         els.nextBtn.classList.remove('hidden');
@@ -480,18 +497,18 @@ document.addEventListener('DOMContentLoaded', () => {
         state.sessionQuestions.forEach((q, i) => {
             const correctOpts = q.options.filter(o => o.isCorrect);
             const correctText = correctOpts.length > 0 
-                ? correctOpts.map(o => `> ${o.text}`).join('<br>') 
+                ? correctOpts.map(o => `> ${marked.parseInline(o.text)}`).join('<br>') 
                 : "NULL";
 
             html += `
                 <div class="study-item">
                     <div class="study-badge">[${q.type}] // ${q.points || 1} PTS</div>
-                    <div class="study-q">${i + 1}. ${q.text}</div>
+                    <div class="study-q">${i + 1}. ${marked.parse(q.text)}</div>
                     <div class="study-ans">
                         <span class="study-ans-lbl">DATO_CORRECTO:</span>
                         ${correctText}
                     </div>
-                    ${q.feedback ? `<div class="study-expl">${q.feedback}</div>` : ''}
+                    ${q.feedback ? `<div class="study-expl sys-text">${marked.parse(q.feedback)}</div>` : ''}
                 </div>`;
         });
         html += '</div>';
@@ -499,6 +516,12 @@ document.addEventListener('DOMContentLoaded', () => {
         html += `<div style="margin-top: 3rem; text-align:center;"><button class="btn primary huge" onclick="document.getElementById('btn-exit-quiz').click()">FINALIZAR_INSPECCIÓN</button></div>`;
 
         els.questionContainer.innerHTML = html;
+        
+        // Highlight code blocks in study mode
+        els.questionContainer.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
+
         els.questionContainer.style.background = 'transparent';
         els.questionContainer.style.border = 'none';
         els.questionContainer.style.padding = '0';
@@ -549,5 +572,50 @@ document.addEventListener('DOMContentLoaded', () => {
             [result[i], result[j]] = [result[j], result[i]];
         }
         return result;
+    }
+
+    function parseXMLQuiz(xmlText) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+        
+        if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
+            throw new Error("FORMATO XML INVÁLIDO");
+        }
+
+        const titleNode = xmlDoc.querySelector("title");
+        const title = titleNode ? titleNode.textContent : "";
+        
+        const questions = [];
+        const qNodes = xmlDoc.querySelectorAll("question");
+        
+        if (qNodes.length === 0) {
+            throw new Error("No se encontraron nodos <question> en el XML");
+        }
+
+        qNodes.forEach((qNode, i) => {
+            const id = qNode.getAttribute("id") || `q_${i}`;
+            const type = qNode.getAttribute("type") || "single";
+            const points = parseInt(qNode.getAttribute("points") || "1");
+            const textNode = qNode.querySelector("text");
+            const text = textNode ? textNode.textContent : "";
+            const feedbackNode = qNode.querySelector("feedback");
+            const feedback = feedbackNode ? feedbackNode.textContent : "";
+            
+            const options = [];
+            const optNodes = qNode.querySelectorAll("option");
+            optNodes.forEach((oNode, j) => {
+                const optId = oNode.getAttribute("id") || `o_${i}_${j}`;
+                const isCorrect = oNode.getAttribute("isCorrect") === "true";
+                options.push({
+                    id: optId,
+                    text: oNode.textContent,
+                    isCorrect: isCorrect
+                });
+            });
+
+            questions.push({ id, type, points, text, feedback, options });
+        });
+
+        return { title, questions };
     }
 });

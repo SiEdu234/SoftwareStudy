@@ -4,149 +4,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estudiar</title>
+    <title>Estudien Vagos | Terminal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+    <!-- Grain overlay -->
+    <div class="noise"></div>
+
     <div class="app-container">
         <!-- HEADER -->
-        <header>
-            <div class="header-content">
-                <h1>Estudien vagos<span class="highlight"></span></h1>
+        <header class="sys-header">
+            <div class="sys-logo">
+                <i class="ph-fill ph-terminal-window"></i>
+                <h1>SYS.ESTUDIEN_VAGOS</h1>
+            </div>
+            <div class="sys-marquee">
+                <div class="marquee-content">
+                    <span>// PREPARANDO SESIÓN DE ESTUDIO</span>
+                    <span>// ENTORNO ACTIVO</span>
+                    <span>// DATOS SEGUROS</span>
+                    <span>// NO HAY EXCUSAS</span>
+                    <span>// PREPARANDO SESIÓN DE ESTUDIO</span>
+                </div>
             </div>
         </header>
 
-        <main id="main-content">
+        <main id="main-content" class="sys-main">
 
             <!-- VIEW: DASHBOARD (SUBJECTS LIST) -->
             <section id="dashboard-view" class="view active fade-in">
-                <div class="dashboard-header">
-                    <h2>Mis Materias</h2>
-                    <button id="btn-create-subject" class="btn primary icon-btn">
-                        <span class="material-icons-round">add</span> Nueva Materia
+                <div class="section-header">
+                    <div class="header-left">
+                        <div class="status-dot blink"></div>
+                        <h2>DIRECTORIO_MATERIAS</h2>
+                    </div>
+                    <button id="btn-create-subject" class="btn primary">
+                        <i class="ph ph-plus-circle"></i> NUEVO REGISTRO
                     </button>
                 </div>
 
-                <div id="subjects-grid" class="library-grid">
+                <div id="subjects-grid" class="data-grid">
                     <!-- Subject Cards Injected Here -->
-                    <div class="empty-state">
-                        <div class="icon-box">
-                            <span class="material-icons-round">folder_open</span>
-                        </div>
-                        <h3>No tienes materias creadas</h3>
-                        <p>Crea una materia para organizar tus cuestionarios.</p>
-                    </div>
                 </div>
             </section>
 
             <!-- VIEW: SUBJECT DETAILS (FILE MANAGER) -->
-            <!-- Removed 'hidden' class here, relying on 'view' CSS -->
             <section id="subject-view" class="view">
-                <div class="view-header">
+                <div class="section-header">
                     <button id="btn-back-dashboard" class="btn text-only">
-                        <span class="material-icons-round">arrow_back</span> Volver
+                        <i class="ph ph-arrow-left"></i> RETORNAR
                     </button>
-                    <h2 id="subject-title">Nombre Materia</h2>
+                    <h2 id="subject-title" class="glitch-text" data-text="Materia">Materia</h2>
                 </div>
 
-                <div class="subject-layout">
+                <div class="panel-layout">
                     <!-- Files List -->
-                    <div class="files-panel card">
+                    <div class="panel card">
                         <div class="panel-header">
-                            <h3>Archivos Cargados</h3>
-                            <label for="import-file" class="btn secondary icon-btn small">
-                                <span class="material-icons-round">upload_file</span> Subir JSON
+                            <h3><i class="ph ph-database"></i> DATA_ARCHIVOS</h3>
+                            <label for="import-file" class="btn secondary small">
+                                <i class="ph ph-upload-simple"></i> INYECTAR JSON
                             </label>
                             <input type="file" id="import-file" accept=".json" multiple hidden>
                         </div>
-                        <div id="files-list" class="files-list">
+                        <div id="files-list" class="list-container">
                             <!-- File Items -->
                         </div>
                     </div>
 
                     <!-- Session Config -->
-                    <div class="session-panel card">
-                        <h3>Configurar Práctica</h3>
-                        <p class="helper-text">Selecciona los archivos de la izquierda que quieras incluir.</p>
+                    <div class="panel card config-panel">
+                        <h3><i class="ph ph-sliders"></i> PARÁMETROS_SESIÓN</h3>
+                        <p class="sys-text">Selecciona nodos de datos a la izquierda para iniciar.</p>
 
-                        <div class="config-group">
-                            <label>Cantidad de Preguntas</label>
+                        <div class="form-group">
+                            <label>LÍMITE_EXTRACCIÓN</label>
                             <div class="grid-options">
                                 <button class="option-btn" data-count="10">10</button>
                                 <button class="option-btn" data-count="20">20</button>
                                 <button class="option-btn" data-count="30">30</button>
-                                <button class="option-btn active" data-count="all">Todas</button>
+                                <button class="option-btn active" data-count="all">MAX</button>
                             </div>
                         </div>
 
-                        <div class="config-group">
-                            <label>Modo</label>
+                        <div class="form-group">
+                            <label>MODO_EJECUCIÓN</label>
                             <div class="segmented-control">
-                                <button class="segment active" data-mode="test">Test</button>
-                                <button class="segment" data-mode="study">Estudio (Ver Todo)</button>
+                                <button class="segment active" data-mode="test">EVALUAR</button>
+                                <button class="segment" data-mode="study">INSPECCIONAR</button>
                             </div>
                         </div>
 
-                        <button id="btn-start-session" class="btn primary full-width" disabled>
-                            Comenzar Sesión
+                        <div class="spacer"></div>
+                        <button id="btn-start-session" class="btn primary huge" disabled>
+                            INICIALIZAR_SISTEMA
                         </button>
                     </div>
                 </div>
             </section>
 
             <!-- VIEW: QUIZ RUNNER -->
-            <!-- Removed 'hidden' class here -->
             <section id="quiz-view" class="view">
-                <div class="quiz-status-bar">
-                    <button id="btn-exit-quiz" class="btn text-only small">
-                        <span class="material-icons-round">close</span> Salir
+                <div class="hud-top">
+                    <button id="btn-exit-quiz" class="btn text-only alert">
+                        <i class="ph ph-x-square"></i> ABORTAR
                     </button>
-                    <div class="progress-wrapper">
-                        <div class="progress-bar" id="progress-bar"></div>
+                    <div class="hud-progress-container">
+                        <div class="hud-progress-bar" id="progress-bar"></div>
                     </div>
-                    <span id="quiz-progress-text">0/0</span>
+                    <div class="hud-counter" id="quiz-progress-text">0 / 0</div>
                 </div>
 
-                <div class="card question-card fade-in" id="question-container">
+                <div class="quiz-canvas fade-in" id="question-container">
                     <!-- Question Injected Here -->
                 </div>
 
-                <div class="controls">
-                    <button id="submit-btn" class="btn primary">Confirmar</button>
-                    <button id="next-btn" class="btn secondary hidden">Siguiente <span
-                            class="material-icons-round">arrow_forward</span></button>
+                <div class="hud-bottom">
+                    <button id="submit-btn" class="btn primary">EJECUTAR_RESPUESTA</button>
+                    <button id="next-btn" class="btn secondary hidden">SIGUIENTE_NODO <i class="ph ph-arrow-right"></i></button>
                 </div>
             </section>
 
             <!-- VIEW: RESULTS -->
-            <!-- Removed 'hidden' class here -->
             <section id="results-view" class="view fade-in">
-                <div class="results-card card">
-                    <div class="score-ring-container">
-                        <div class="score-ring">
-                            <svg viewBox="0 0 36 36" class="circular-chart">
-                                <path class="circle-bg"
-                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                <path class="circle" id="score-circle-path" stroke-dasharray="0, 100"
-                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            </svg>
-                            <div class="score-text">
-                                <span id="result-percentage">0%</span>
-                            </div>
-                        </div>
+                <div class="results-container">
+                    <div class="results-visual">
+                        <svg viewBox="0 0 100 100" class="tech-ring">
+                            <circle class="ring-bg" cx="50" cy="50" r="45"></circle>
+                            <circle class="ring-progress" id="score-circle-path" cx="50" cy="50" r="45"></circle>
+                        </svg>
+                        <div class="results-score-text" id="result-percentage">0%</div>
                     </div>
-
-                    <h2 class="result-title">Sesión Finalizada</h2>
-                    <p id="result-details" class="result-subtitle">Has acertado X de Y preguntas.</p>
-
-                    <div class="result-actions">
-                        <button id="btn-return-subject" class="btn secondary">Volver a Materia</button>
-                        <button id="btn-retry" class="btn primary">Repetir Sesión</button>
+                    
+                    <div class="results-info">
+                        <h2 class="result-title">DIAGNÓSTICO_COMPLETADO</h2>
+                        <p id="result-details" class="sys-text">Precisión: X/Y nodos correctos.</p>
+                        
+                        <div class="results-actions">
+                            <button id="btn-return-subject" class="btn secondary"><i class="ph ph-arrow-u-down-left"></i> VOLVER</button>
+                            <button id="btn-retry" class="btn primary"><i class="ph ph-arrows-clockwise"></i> REINTENTAR</button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -155,10 +157,11 @@
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="toast hidden">Mensaje</div>
+    <div id="toast" class="sys-toast hidden">
+        <i class="ph ph-info"></i>
+        <span class="toast-msg">Mensaje del sistema</span>
+    </div>
 
     <script src="script.js"></script>
 </body>
-
-
 </html>

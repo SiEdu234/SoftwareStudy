@@ -4,12 +4,13 @@ const API_URL = (window.location.hostname === 'localhost' || window.location.hos
 document.addEventListener('DOMContentLoaded', () => {
     // === STATE ===
     const state = {
-        data: { subjects: [] }, // { subjects: [ { id, name, files: [] } ] }
+        data: { subjects: [] }, 
         currentSubjectId: null,
         selectedFiles: [],
         sessionQuestions: [],
         currentQuestionIndex: 0,
         score: 0,
+        maxScore: 0, // Nuevo: calculamos puntos totales
         userAnswers: [],
         sessionMode: 'test',
         sessionCount: 'all'
@@ -49,21 +50,16 @@ document.addEventListener('DOMContentLoaded', () => {
     loadData();
 
     // === EVENT LISTENERS ===
-
-    // Dashboard
     els.createSubjectBtn.addEventListener('click', () => {
-        const name = prompt("Nombre de la nueva materia:");
+        const name = prompt("INGRESAR_IDENTIFICADOR_NUEVA_MATERIA:");
         if (name && name.trim()) {
             createSubject(name.trim());
         }
     });
 
     els.backDashboardBtn.addEventListener('click', () => switchView('dashboard'));
-
-    // Subject View
     els.importInput.addEventListener('change', handleImport);
 
-    // Session Config
     document.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
@@ -81,13 +77,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     els.startSessionBtn.addEventListener('click', startSession);
-
-    // Quiz Navigation
     els.submitBtn.addEventListener('click', checkAnswer);
     els.nextBtn.addEventListener('click', nextQuestion);
-
+    
     els.exitQuizBtn.addEventListener('click', () => {
-        if (confirm("¿Seguro que quieres salir? Se perderá el progreso actual.")) {
+        if (confirm("¿CONFIRMAR ABORTO DE SESIÓN? LOS DATOS SERÁN PURGADOS.")) {
             switchView('subject');
         }
     });
@@ -95,18 +89,18 @@ document.addEventListener('DOMContentLoaded', () => {
     els.returnSubjectBtn.addEventListener('click', () => switchView('subject'));
     els.retryBtn.addEventListener('click', startSession);
 
-    // === API / DATA LOGIC ===
+    // === API LOGIC ===
     
     async function loadData() {
         try {
             const res = await fetch(`${API_URL}/subjects`);
-            if (!res.ok) throw new Error('Error de red');
+            if (!res.ok) throw new Error('Network err');
             const subjects = await res.json();
             state.data.subjects = subjects;
             renderDashboard();
         } catch (err) {
-            console.error("No se pudo cargar la info de la BD:", err);
-            showToast("Error de conexión con el servidor", "error");
+            console.error("Error BD:", err);
+            showToast("FALLO_DE_CONEXIÓN", "error");
         }
     }
 
@@ -119,23 +113,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ id, name })
             });
             await loadData();
-            showToast(`Materia "${name}" creada`);
+            showToast(`NODO [${name}] INICIALIZADO`);
         } catch (err) {
             console.error(err);
-            showToast("Error al crear materia", "error");
+            showToast("ERROR_DE_CREACIÓN", "error");
         }
     }
 
     async function deleteSubject(id) {
-        if (confirm("¿Eliminar materia y todos sus archivos de forma permanente?")) {
+        if (confirm("¿PURGAR NODO PERMANENTEMENTE?")) {
             try {
                 await fetch(`${API_URL}/subjects/${id}`, { method: 'DELETE' });
                 if (state.currentSubjectId === id) switchView('dashboard');
                 await loadData();
-                showToast("Materia eliminada");
+                showToast("NODO PURGADO");
             } catch (err) {
                 console.error(err);
-                showToast("Error al eliminar", "error");
+                showToast("ERROR_PURGA", "error");
             }
         }
     }
@@ -146,7 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!subject) return;
 
         els.subjectTitle.textContent = subject.name;
-        state.selectedFiles = []; // Reset selection
+        els.subjectTitle.setAttribute('data-text', subject.name);
+        state.selectedFiles = [];
         renderFilesList();
         switchView('subject');
     }
@@ -159,22 +154,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (subjectIndex === -1) return;
 
         let addedCount = 0;
-        showToast("Subiendo archivos...");
+        showToast("INYECCIÓN_EN_PROGRESO...");
         
         for (const file of files) {
             try {
                 const text = await file.text();
-                const json = JSON.parse(text);
+                let json = JSON.parse(text);
 
-                if (!json.questions || !Array.isArray(json.questions)) {
-                    throw new Error("Formato inválido. Debe tener un arreglo 'questions'.");
+                let questions = [];
+                // Support V2 format (object with questions array) and V1 (just array)
+                if (Array.isArray(json)) {
+                    questions = json;
+                } else if (json.questions && Array.isArray(json.questions)) {
+                    questions = json.questions;
+                } else {
+                    throw new Error("FORMATO_CORRUPTO: Se requiere un array de preguntas.");
                 }
 
                 const fileId = crypto.randomUUID();
                 const payload = {
                     id: fileId,
-                    name: file.name.replace('.json', ''),
-                    data: json.questions
+                    name: json.title || file.name.replace('.json', ''),
+                    data: questions
                 };
 
                 await fetch(`${API_URL}/subjects/${state.currentSubjectId}/files`, {
@@ -186,29 +187,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 addedCount++;
             } catch (err) {
                 console.error(err);
-                showToast(`Error en ${file.name}: ${err.message}`, 'error');
+                showToast(`ERROR_INYECCIÓN [${file.name}]: ${err.message}`, 'error');
             }
         }
 
         if (addedCount > 0) {
             await loadData();
-            // Refrescar vista
             renderFilesList();
-            showToast(`${addedCount} archivos subidos correctamente`);
+            showToast(`${addedCount} SETS INYECTADOS`);
         }
         els.importInput.value = '';
     }
 
     async function deleteFile(fileId) {
-        if (confirm("¿Eliminar archivo permanentemente?")) {
+        if (confirm("¿PURGAR ARCHIVO PERMANENTEMENTE?")) {
             try {
                 await fetch(`${API_URL}/files/${fileId}`, { method: 'DELETE' });
                 await loadData();
                 renderFilesList();
-                showToast("Archivo eliminado");
+                showToast("ARCHIVO PURGADO");
             } catch (err) {
                 console.error(err);
-                showToast("Error al eliminar", "error");
+                showToast("ERROR_PURGA", "error");
             }
         }
     }
@@ -221,26 +221,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.data.subjects.length === 0) {
             els.subjectsGrid.innerHTML = `
                 <div class="empty-state">
-                    <div class="icon-box"><span class="material-icons-round">folder_off</span></div>
-                    <h3>No tienes materias</h3>
-                    <p>Agrega una materia para empezar.</p>
+                    <i class="ph ph-folder-dashed"></i>
+                    <h3>SISTEMA_VACÍO</h3>
+                    <p class="sys-text">Agrega una materia para inicializar.</p>
                 </div>`;
             return;
         }
 
         state.data.subjects.forEach(subject => {
             const card = document.createElement('div');
-            card.className = 'quiz-card fade-in';
+            card.className = 'sys-card fade-in';
             card.innerHTML = `
-                <div class="card-icon"><span class="material-icons-round">auto_stories</span></div>
+                <i class="ph ph-book-open-text card-icon"></i>
                 <h3>${subject.name}</h3>
-                <div class="card-meta">${subject.files.length} cuestionario${subject.files.length !== 1 ? 's' : ''}</div>
+                <div class="card-meta"><i class="ph ph-files"></i> ${subject.files.length} SETS</div>
             `;
 
-            // Delete Subject Button
             const delBtn = document.createElement('button');
-            delBtn.innerHTML = '<span class="material-icons-round">delete_outline</span>';
-            delBtn.className = 'delete-btn';
+            delBtn.innerHTML = '<i class="ph ph-trash"></i>';
+            delBtn.className = 'btn-icon-danger';
             delBtn.onclick = (e) => { e.stopPropagation(); deleteSubject(subject.id); };
 
             card.appendChild(delBtn);
@@ -254,62 +253,57 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!subject) return;
 
         els.filesList.innerHTML = '';
-        
-        // Remove deleted files from selection
         state.selectedFiles = state.selectedFiles.filter(id => subject.files.some(f => f.id === id));
         updateStartButton();
 
         if (subject.files.length === 0) {
-            els.filesList.innerHTML = `<p style="text-align:center; color:var(--text-secondary); padding:2rem;">No hay cuestionarios. ¡Sube un JSON estructurado!</p>`;
+            els.filesList.innerHTML = `<p class="sys-text" style="padding:1rem; text-align:center;">SIN DATOS. REQUIERE INYECCIÓN JSON.</p>`;
             return;
         }
 
         subject.files.forEach(file => {
-            const item = document.createElement('div');
-            item.className = 'file-item';
-            
-            if (state.selectedFiles.includes(file.id)) {
-                item.classList.add('selected');
-            }
+            const row = document.createElement('div');
+            row.className = 'file-row';
+            if (state.selectedFiles.includes(file.id)) row.classList.add('selected');
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
+            checkbox.className = 'sys-checkbox';
             checkbox.value = file.id;
             checkbox.checked = state.selectedFiles.includes(file.id);
-            checkbox.addEventListener('change', () => toggleFileSelection(file.id, item));
+            checkbox.addEventListener('change', () => toggleFileSelection(file.id, row));
 
-            const labelInfo = document.createElement('div');
-            labelInfo.className = 'file-info';
-            labelInfo.innerHTML = `<strong>${file.name}</strong><span>${file.data.length} preguntas</span>`;
+            const info = document.createElement('div');
+            info.className = 'file-info';
+            info.innerHTML = `<strong>${file.name}</strong><span>${file.data.length} NODOS</span>`;
 
             const trash = document.createElement('button');
-            trash.className = 'delete-btn small';
-            trash.innerHTML = '<span class="material-icons-round">delete</span>';
+            trash.className = 'btn text-only alert small';
+            trash.innerHTML = '<i class="ph ph-trash"></i>';
             trash.onclick = (e) => { e.stopPropagation(); deleteFile(file.id); };
 
-            item.appendChild(checkbox);
-            item.appendChild(labelInfo);
-            item.appendChild(trash);
+            row.appendChild(checkbox);
+            row.appendChild(info);
+            row.appendChild(trash);
 
-            // Click row to toggle
-            item.addEventListener('click', (e) => {
+            row.addEventListener('click', (e) => {
                 if (e.target !== checkbox && e.target !== trash && !trash.contains(e.target)) {
                     checkbox.checked = !checkbox.checked;
-                    toggleFileSelection(file.id, item);
+                    toggleFileSelection(file.id, row);
                 }
             });
 
-            els.filesList.appendChild(item);
+            els.filesList.appendChild(row);
         });
     }
 
-    function toggleFileSelection(fileId, itemEl) {
+    function toggleFileSelection(fileId, rowEl) {
         if (state.selectedFiles.includes(fileId)) {
             state.selectedFiles = state.selectedFiles.filter(id => id !== fileId);
-            if(itemEl) itemEl.classList.remove('selected');
+            if(rowEl) rowEl.classList.remove('selected');
         } else {
             state.selectedFiles.push(fileId);
-            if(itemEl) itemEl.classList.add('selected');
+            if(rowEl) rowEl.classList.add('selected');
         }
         updateStartButton();
     }
@@ -318,12 +312,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const count = state.selectedFiles.length;
         if (count > 0) {
             els.startSessionBtn.disabled = false;
-            els.startSessionBtn.textContent = `Comenzar con ${count} cuestionarios`;
-            els.startSessionBtn.classList.add('pulse');
+            els.startSessionBtn.innerHTML = `<i class="ph ph-power"></i> INICIALIZAR [${count}]`;
         } else {
             els.startSessionBtn.disabled = true;
-            els.startSessionBtn.textContent = 'Selecciona cuestionarios';
-            els.startSessionBtn.classList.remove('pulse');
+            els.startSessionBtn.textContent = 'SELECCIONA NODOS';
         }
     }
 
@@ -335,9 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let pool = [];
         subject.files.forEach(f => {
-            if (state.selectedFiles.includes(f.id)) {
-                pool = pool.concat(f.data);
-            }
+            if (state.selectedFiles.includes(f.id)) pool = pool.concat(f.data);
         });
 
         if (pool.length === 0) return;
@@ -356,15 +346,13 @@ document.addEventListener('DOMContentLoaded', () => {
         state.sessionQuestions = pool;
         state.currentQuestionIndex = 0;
         state.score = 0;
+        state.maxScore = pool.reduce((acc, q) => acc + (q.points || 1), 0);
         state.userAnswers = [];
 
         switchView('quiz');
 
-        if (state.sessionMode === 'test') {
-            renderQuestion();
-        } else {
-            renderStudyMode();
-        }
+        if (state.sessionMode === 'test') renderQuestion();
+        else renderStudyMode();
     }
 
     function renderQuestion() {
@@ -373,47 +361,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const progress = ((state.currentQuestionIndex) / state.sessionQuestions.length) * 100;
         els.progressBar.style.width = `${progress}%`;
-        els.progressText.textContent = `${state.currentQuestionIndex + 1}/${state.sessionQuestions.length}`;
+        els.progressText.textContent = `${state.currentQuestionIndex + 1} / ${state.sessionQuestions.length}`;
 
         els.submitBtn.classList.remove('hidden');
         els.nextBtn.classList.add('hidden');
         els.questionContainer.classList.remove('study-mode');
-        els.questionContainer.classList.add('fade-in');
-
-        // Reiniciar animacion fade
+        
+        // Re-trigger animation
         els.questionContainer.style.animation = 'none';
-        els.questionContainer.offsetHeight; // trigger reflow
+        els.questionContainer.offsetHeight; 
         els.questionContainer.style.animation = null; 
 
-        const typeLabels = { 'single': 'Respuesta Única', 'multiple': 'Selección Múltiple', 'boolean': 'Verdadero o Falso' };
+        const typeLabels = { 'single': 'ÚNICA', 'multiple': 'MÚLTIPLE', 'boolean': 'BINARIO' };
+        const pts = q.points || 1;
 
         els.questionContainer.innerHTML = `
-            <div class="question-header">
-                <span class="question-type-badge ${q.type}">${typeLabels[q.type] || 'Pregunta'}</span>
-            </div>
-            <h2 class="question-text">${q.text}</h2>
-            <div class="options-grid ${q.options.length <= 2 ? 'two-cols' : ''}">
+            <div class="q-badge">${typeLabels[q.type] || 'NODO'} // ${pts} PTS</div>
+            <h2 class="q-text">${q.text}</h2>
+            <div class="opts-grid ${q.options.length <= 2 ? 'cols-2' : ''}">
                 ${q.options.map((opt, i) => `
-                    <div class="option-item" data-id="${opt.id}">
-                        <div class="option-letter">${String.fromCharCode(65 + i)}</div>
-                        <div class="option-content">${opt.text}</div>
+                    <div class="opt-box" data-id="${opt.id}">
+                        <div class="opt-idx">[${String.fromCharCode(65 + i)}]</div>
+                        <div class="opt-txt">${opt.text}</div>
                     </div>
                 `).join('')}
             </div>
             <div id="feedback-area"></div>
         `;
 
-        els.questionContainer.querySelectorAll('.option-item').forEach(item => {
+        els.questionContainer.querySelectorAll('.opt-box').forEach(item => {
             item.addEventListener('click', () => handleOptionClick(item, q.type));
         });
     }
 
     function handleOptionClick(item, type) {
-        if (els.submitBtn.classList.contains('hidden')) return; // Ya se respondió
+        if (els.submitBtn.classList.contains('hidden')) return; 
 
         const id = item.dataset.id;
         if (type === 'single' || type === 'boolean') {
-            els.questionContainer.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
+            els.questionContainer.querySelectorAll('.opt-box').forEach(el => el.classList.remove('selected'));
             state.userAnswers = [id];
             item.classList.add('selected');
         } else if (type === 'multiple') {
@@ -430,9 +416,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkAnswer() {
         const q = state.sessionQuestions[state.currentQuestionIndex];
         
-        // Si no hay respuesta del usuario, no hacer nada (opcional: forzar a que elija)
         if (state.userAnswers.length === 0) {
-            showToast('Selecciona al menos una respuesta', 'error');
+            showToast('DEBES SELECCIONAR UN NODO', 'error');
             return;
         }
 
@@ -447,9 +432,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (isCorrect) state.score++;
+        const pts = q.points || 1;
+        if (isCorrect) state.score += pts;
 
-        els.questionContainer.querySelectorAll('.option-item').forEach(item => {
+        els.questionContainer.querySelectorAll('.opt-box').forEach(item => {
             const id = item.dataset.id;
             const isSelected = state.userAnswers.includes(id);
             const isReal = correctIds.includes(id);
@@ -457,18 +443,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isReal) item.classList.add('correct');
             else if (isSelected) item.classList.add('incorrect');
             
-            // Disable clicks
             item.style.pointerEvents = 'none';
         });
 
         const fbArea = document.getElementById('feedback-area');
         fbArea.innerHTML = `
-            <div class="feedback-text ${isCorrect ? 'correct-msg' : 'incorrect-msg'} fade-in">
-                <div class="feedback-icon">
-                    <span class="material-icons-round">${isCorrect ? 'check_circle' : 'cancel'}</span>
-                </div>
+            <div class="feedback-alert ${isCorrect ? 'correct' : 'incorrect'} fade-in">
+                <i class="ph ${isCorrect ? 'ph-check-circle' : 'ph-x-circle'}"></i>
                 <div class="feedback-content">
-                    <strong>${isCorrect ? '¡Excelente!' : 'Respuesta Incorrecta'}</strong>
+                    <strong>${isCorrect ? 'RESULTADO_POSITIVO' : 'RESULTADO_NEGATIVO'}</strong>
                     ${q.feedback ? `<p>${q.feedback}</p>` : ''}
                 </div>
             </div>
@@ -489,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderStudyMode() {
         els.progressBar.style.width = '100%';
-        els.progressText.textContent = 'Modo Estudio Activo';
+        els.progressText.textContent = 'MODO_INSPECCIÓN';
         els.submitBtn.classList.add('hidden');
         els.nextBtn.classList.add('hidden');
 
@@ -497,56 +480,74 @@ document.addEventListener('DOMContentLoaded', () => {
         state.sessionQuestions.forEach((q, i) => {
             const correctOpts = q.options.filter(o => o.isCorrect);
             const correctText = correctOpts.length > 0 
-                ? correctOpts.map(o => `• ${o.text}`).join('<br>') 
-                : "Ninguna";
+                ? correctOpts.map(o => `> ${o.text}`).join('<br>') 
+                : "NULL";
 
             html += `
-                <div class="study-item card">
-                    <div class="study-badge ${q.type}">${q.type === 'single' ? 'Respuesta Única' : 'Múltiple'}</div>
-                    <h3>${i + 1}. ${q.text}</h3>
-                    <div class="study-answer">
-                        <strong>Respuesta correcta:</strong><br>
+                <div class="study-item">
+                    <div class="study-badge">[${q.type}] // ${q.points || 1} PTS</div>
+                    <div class="study-q">${i + 1}. ${q.text}</div>
+                    <div class="study-ans">
+                        <span class="study-ans-lbl">DATO_CORRECTO:</span>
                         ${correctText}
                     </div>
-                    ${q.feedback ? `
-                    <div class="study-feedback">
-                        <strong>Explicación:</strong>
-                        <p>${q.feedback}</p>
-                    </div>` : ''}
+                    ${q.feedback ? `<div class="study-expl">${q.feedback}</div>` : ''}
                 </div>`;
         });
         html += '</div>';
 
-        html += `<div style="text-align:center; padding:2rem"><button class="btn primary large pulse" onclick="document.getElementById('btn-exit-quiz').click()">Terminar Repaso</button></div>`;
+        html += `<div style="margin-top: 3rem; text-align:center;"><button class="btn primary huge" onclick="document.getElementById('btn-exit-quiz').click()">FINALIZAR_INSPECCIÓN</button></div>`;
 
         els.questionContainer.innerHTML = html;
         els.questionContainer.style.background = 'transparent';
-        els.questionContainer.style.boxShadow = 'none';
         els.questionContainer.style.border = 'none';
+        els.questionContainer.style.padding = '0';
     }
 
     function showResults() {
         switchView('results');
-        const pct = Math.round((state.score / state.sessionQuestions.length) * 100) || 0;
-        const offset = 100 - (pct);
-        els.scoreCircle.style.strokeDashoffset = offset;
+        const max = state.maxScore > 0 ? state.maxScore : 1;
+        const pct = Math.round((state.score / max) * 100);
+        
+        // 2 * PI * r (r=45) = ~283
+        const circumference = 283;
+        const offset = circumference - (pct / 100) * circumference;
+        
+        setTimeout(() => {
+            els.scoreCircle.style.strokeDashoffset = offset;
+        }, 100);
+        
         els.resultPercentage.textContent = `${pct}%`;
-        els.resultDetails.innerHTML = `Has acertado <strong>${state.score}</strong> de <strong>${state.sessionQuestions.length}</strong> preguntas.`;
+        els.resultDetails.innerHTML = `SCORE OBTENIDO: <strong style="color:var(--fg-primary)">${state.score} / ${state.maxScore}</strong> PTS.`;
     }
 
     // === UTILS ===
     function showToast(msg, type = 'info') {
-        els.toast.textContent = msg;
-        els.toast.className = `toast visible ${type}`;
+        const span = els.toast.querySelector('.toast-msg');
+        const icon = els.toast.querySelector('i');
+        span.textContent = msg;
+        icon.className = type === 'error' ? 'ph ph-warning-circle' : 'ph ph-info';
+        
+        els.toast.className = `sys-toast visible ${type}`;
         setTimeout(() => els.toast.classList.remove('visible'), 3000);
     }
 
     function switchView(name) {
         Object.values(views).forEach(el => el.classList.remove('active'));
         views[name].classList.add('active');
+        
+        // Reset canvas styles if leaving quiz
+        if (name !== 'quiz') {
+            els.questionContainer.style = '';
+        }
     }
 
     function shuffleArray(arr) {
-        return [...arr].sort(() => Math.random() - 0.5);
+        const result = [...arr];
+        for (let i = result.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [result[i], result[j]] = [result[j], result[i]];
+        }
+        return result;
     }
 });

@@ -59,3 +59,32 @@ Para aprovechar al máximo las nuevas mejoras en la plataforma y la lógica, el 
    - `single`: Selección única.
    - `multiple`: Selección múltiple.
    - `boolean`: Verdadero/Falso.
+
+## Formato XML Soportado
+Además del formato JSON, el sistema ha sido actualizado para inyectar archivos `.xml`. La estructura es muy similar y cuenta con el mismo soporte para Markdown/código en el interior de los nodos:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+    <title>Nombre del Cuestionario o Materia</title>
+    <question id="q_1001" type="single" points="10">
+        <text>¿Cuál es la capital de Francia?</text>
+        <feedback>París es la capital de Francia.</feedback>
+        <option id="opt_a" isCorrect="false">Madrid</option>
+        <option id="opt_b" isCorrect="true">París</option>
+    </question>
+    
+    <question id="q_1002" type="multiple" points="15">
+        <text>
+            Selecciona los lenguajes de programación web:
+            ```javascript
+            console.log("Soporta código Markdown aquí también");
+            ```
+        </text>
+        <feedback>HTML es de marcado, los otros sí.</feedback>
+        <option id="opt_x" isCorrect="true">JavaScript</option>
+        <option id="opt_y" isCorrect="false">HTML</option>
+    </question>
+</quiz>
+```
+Nota: `points`, `id`, `type` e `isCorrect` son atributos XML, mientras que `<text>`, `<feedback>` y el valor de `<option>` son nodos de texto.

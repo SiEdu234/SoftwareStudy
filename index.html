@@ -9,6 +9,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Marked & Highlight.js for Code Support -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/outrun-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -68,9 +72,9 @@
                         <div class="panel-header">
                             <h3><i class="ph ph-database"></i> DATA_ARCHIVOS</h3>
                             <label for="import-file" class="btn secondary small">
-                                <i class="ph ph-upload-simple"></i> INYECTAR JSON
+                                <i class="ph ph-upload-simple"></i> INYECTAR DATOS
                             </label>
-                            <input type="file" id="import-file" accept=".json" multiple hidden>
+                            <input type="file" id="import-file" accept=".json,.xml" multiple hidden>
                         </div>
                         <div id="files-list" class="list-container">
                             <!-- File Items -->

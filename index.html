@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estudien Vagos | Terminal</title>
+    <title>Estudien Vagos | Study Console</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">
@@ -25,15 +25,15 @@
         <header class="sys-header">
             <div class="sys-logo">
                 <i class="ph-fill ph-terminal-window"></i>
-                <h1>SYS.ESTUDIEN_VAGOS</h1>
+                <h1>ESTUDIEN VAGOS</h1>
             </div>
             <div class="sys-marquee">
                 <div class="marquee-content">
-                    <span>// PREPARANDO SESIÓN DE ESTUDIO</span>
-                    <span>// ENTORNO ACTIVO</span>
-                    <span>// DATOS SEGUROS</span>
-                    <span>// NO HAY EXCUSAS</span>
-                    <span>// PREPARANDO SESIÓN DE ESTUDIO</span>
+                    <span>// SESIÓN DE ESTUDIO LISTA</span>
+                    <span>// PREGUNTAS EN ORDEN ALEATORIO</span>
+                    <span>// REPASO RÁPIDO</span>
+                    <span>// MODO PRÁCTICA</span>
+                    <span>// SESIÓN DE ESTUDIO LISTA</span>
                 </div>
             </div>
         </header>
@@ -45,10 +45,10 @@
                 <div class="section-header">
                     <div class="header-left">
                         <div class="status-dot blink"></div>
-                        <h2>DIRECTORIO_MATERIAS</h2>
+                        <h2>Materias</h2>
                     </div>
                     <button id="btn-create-subject" class="btn primary">
-                        <i class="ph ph-plus-circle"></i> NUEVO REGISTRO
+                        <i class="ph ph-plus-circle"></i> Nueva materia
                     </button>
                 </div>
 
@@ -61,7 +61,7 @@
             <section id="subject-view" class="view">
                 <div class="section-header">
                     <button id="btn-back-dashboard" class="btn text-only">
-                        <i class="ph ph-arrow-left"></i> RETORNAR
+                        <i class="ph ph-arrow-left"></i> Volver
                     </button>
                     <h2 id="subject-title" class="glitch-text" data-text="Materia">Materia</h2>
                 </div>
@@ -70,9 +70,9 @@
                     <!-- Files List -->
                     <div class="panel card">
                         <div class="panel-header">
-                            <h3><i class="ph ph-database"></i> DATA_ARCHIVOS</h3>
+                            <h3><i class="ph ph-database"></i> Archivos</h3>
                             <label for="import-file" class="btn secondary small">
-                                <i class="ph ph-upload-simple"></i> INYECTAR DATOS
+                                <i class="ph ph-upload-simple"></i> Subir preguntas
                             </label>
                             <input type="file" id="import-file" accept=".json,.xml" multiple hidden>
                         </div>
@@ -83,30 +83,30 @@
 
                     <!-- Session Config -->
                     <div class="panel card config-panel">
-                        <h3><i class="ph ph-sliders"></i> PARÁMETROS_SESIÓN</h3>
-                        <p class="sys-text">Selecciona nodos de datos a la izquierda para iniciar.</p>
+                        <h3><i class="ph ph-sliders"></i> Sesión</h3>
+                        <p class="sys-text">Selecciona uno o más archivos para practicar.</p>
 
                         <div class="form-group">
-                            <label>LÍMITE_EXTRACCIÓN</label>
+                            <label>Cantidad de preguntas</label>
                             <div class="grid-options">
                                 <button class="option-btn" data-count="10">10</button>
                                 <button class="option-btn" data-count="20">20</button>
                                 <button class="option-btn" data-count="30">30</button>
-                                <button class="option-btn active" data-count="all">MAX</button>
+                                <button class="option-btn active" data-count="all">Todas</button>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label>MODO_EJECUCIÓN</label>
+                            <label>Modo</label>
                             <div class="segmented-control">
-                                <button class="segment active" data-mode="test">EVALUAR</button>
-                                <button class="segment" data-mode="study">INSPECCIONAR</button>
+                                <button class="segment active" data-mode="test">Práctica</button>
+                                <button class="segment" data-mode="study">Repaso</button>
                             </div>
                         </div>
 
                         <div class="spacer"></div>
                         <button id="btn-start-session" class="btn primary huge" disabled>
-                            INICIALIZAR_SISTEMA
+                            Comenzar
                         </button>
                     </div>
                 </div>
@@ -116,7 +116,7 @@
             <section id="quiz-view" class="view">
                 <div class="hud-top">
                     <button id="btn-exit-quiz" class="btn text-only alert">
-                        <i class="ph ph-x-square"></i> ABORTAR
+                        <i class="ph ph-x-square"></i> Salir
                     </button>
                     <div class="hud-progress-container">
                         <div class="hud-progress-bar" id="progress-bar"></div>
@@ -129,8 +129,8 @@
                 </div>
 
                 <div class="hud-bottom">
-                    <button id="submit-btn" class="btn primary">EJECUTAR_RESPUESTA</button>
-                    <button id="next-btn" class="btn secondary hidden">SIGUIENTE_NODO <i class="ph ph-arrow-right"></i></button>
+                    <button id="submit-btn" class="btn primary">Comprobar</button>
+                    <button id="next-btn" class="btn secondary hidden">Siguiente <i class="ph ph-arrow-right"></i></button>
                 </div>
             </section>
 
@@ -146,12 +146,12 @@
                     </div>
                     
                     <div class="results-info">
-                        <h2 class="result-title">DIAGNÓSTICO_COMPLETADO</h2>
+                        <h2 class="result-title">Sesión completada</h2>
                         <p id="result-details" class="sys-text">Precisión: X/Y nodos correctos.</p>
                         
                         <div class="results-actions">
-                            <button id="btn-return-subject" class="btn secondary"><i class="ph ph-arrow-u-down-left"></i> VOLVER</button>
-                            <button id="btn-retry" class="btn primary"><i class="ph ph-arrows-clockwise"></i> REINTENTAR</button>
+                            <button id="btn-return-subject" class="btn secondary"><i class="ph ph-arrow-u-down-left"></i> Volver</button>
+                            <button id="btn-retry" class="btn primary"><i class="ph ph-arrows-clockwise"></i> Reintentar</button>
                         </div>
                     </div>
                 </div>

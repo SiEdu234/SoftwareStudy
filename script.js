@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === EVENT LISTENERS ===
     els.createSubjectBtn.addEventListener('click', () => {
-        const name = prompt("INGRESAR_IDENTIFICADOR_NUEVA_MATERIA:");
+        const name = prompt("Nombre de la nueva materia:");
         if (name && name.trim()) {
             createSubject(name.trim());
         }
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     els.nextBtn.addEventListener('click', nextQuestion);
     
     els.exitQuizBtn.addEventListener('click', () => {
-        if (confirm("¿CONFIRMAR ABORTO DE SESIÓN? LOS DATOS SERÁN PURGADOS.")) {
+        if (confirm("¿Salir de la sesión actual?")) {
             state.sessionQuestions = [];
             state.userAnswers = [];
             state.score = 0;
@@ -197,23 +197,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ id, name })
             });
             await loadData();
-            showToast(`NODO [${name}] INICIALIZADO`);
+            showToast(`Materia creada: ${name}`);
         } catch (err) {
             console.error(err);
-            showToast("ERROR_DE_CREACIÓN", "error");
+            showToast("No se pudo crear la materia", "error");
         }
     }
 
     async function deleteSubject(id) {
-        if (confirm("¿PURGAR NODO PERMANENTEMENTE?")) {
+        if (confirm("¿Eliminar esta materia permanentemente?")) {
             try {
                 await fetch(`${API_URL}/subjects/${id}`, { method: 'DELETE' });
                 if (state.currentSubjectId === id) switchView('dashboard');
                 await loadData();
-                showToast("NODO PURGADO");
+                showToast("Materia eliminada");
             } catch (err) {
                 console.error(err);
-                showToast("ERROR_PURGA", "error");
+                showToast("No se pudo eliminar", "error");
             }
         }
     }
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (subjectIndex === -1) return;
 
         let addedCount = 0;
-        showToast("INYECCIÓN_EN_PROGRESO...");
+        showToast("Subiendo preguntas...");
         
         for (const file of files) {
             try {
@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         questions = json.questions;
                         if (json.title) title = json.title;
                     } else {
-                        throw new Error("FORMATO_CORRUPTO: Se requiere un array de preguntas.");
+                        throw new Error("Formato inválido: se requiere un array de preguntas.");
                     }
                 }
 
@@ -281,28 +281,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 addedCount++;
             } catch (err) {
                 console.error(err);
-                showToast(`ERROR_INYECCIÓN [${file.name}]: ${err.message}`, 'error');
+                showToast(`Error en ${file.name}: ${err.message}`, 'error');
             }
         }
 
         if (addedCount > 0) {
             await loadData();
             renderFilesList();
-            showToast(`${addedCount} SETS INYECTADOS`);
+            showToast(`${addedCount} archivo(s) subido(s)`);
         }
         els.importInput.value = '';
     }
 
     async function deleteFile(fileId) {
-        if (confirm("¿PURGAR ARCHIVO PERMANENTEMENTE?")) {
+        if (confirm("¿Eliminar este archivo permanentemente?")) {
             try {
                 await fetch(`${API_URL}/files/${fileId}`, { method: 'DELETE' });
                 await loadData();
                 renderFilesList();
-                showToast("ARCHIVO PURGADO");
+                showToast("Archivo eliminado");
             } catch (err) {
                 console.error(err);
-                showToast("ERROR_PURGA", "error");
+                showToast("No se pudo eliminar", "error");
             }
         }
     }
@@ -316,8 +316,8 @@ document.addEventListener('DOMContentLoaded', () => {
             els.subjectsGrid.innerHTML = `
                 <div class="empty-state">
                     <i class="ph ph-folder-dashed"></i>
-                    <h3>SISTEMA_VACÍO</h3>
-                    <p class="sys-text">Agrega una materia para inicializar.</p>
+                    <h3>Sin materias todavía</h3>
+                    <p class="sys-text">Agrega una materia para empezar.</p>
                 </div>`;
             return;
         }
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
             card.innerHTML = `
                 <i class="ph ph-book-open-text card-icon"></i>
                 <h3>${subject.name}</h3>
-                <div class="card-meta"><i class="ph ph-files"></i> ${subject.files.length} SETS</div>
+                <div class="card-meta"><i class="ph ph-files"></i> ${subject.files.length} archivo(s)</div>
             `;
 
             const delBtn = document.createElement('button');
@@ -351,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStartButton();
 
         if (subject.files.length === 0) {
-            els.filesList.innerHTML = `<p class="sys-text" style="padding:1rem; text-align:center;">SIN DATOS. REQUIERE INYECCIÓN JSON.</p>`;
+            els.filesList.innerHTML = `<p class="sys-text" style="padding:1rem; text-align:center;">Sube un archivo JSON o XML con preguntas.</p>`;
             return;
         }
 
@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const info = document.createElement('div');
             info.className = 'file-info';
-            info.innerHTML = `<strong>${file.name}</strong><span>${file.data.length} NODOS</span>`;
+            info.innerHTML = `<strong>${file.name}</strong><span>${file.data.length} pregunta(s)</span>`;
 
             const trash = document.createElement('button');
             trash.className = 'btn text-only alert small';
@@ -407,10 +407,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const count = state.selectedFiles.length;
         if (count > 0) {
             els.startSessionBtn.disabled = false;
-            els.startSessionBtn.innerHTML = `<i class="ph ph-power"></i> INICIALIZAR [${count}]`;
+            els.startSessionBtn.innerHTML = `<i class="ph ph-power"></i> Comenzar con ${count}`;
         } else {
             els.startSessionBtn.disabled = true;
-            els.startSessionBtn.textContent = 'SELECCIONA NODOS';
+            els.startSessionBtn.textContent = 'Selecciona archivos';
         }
     }
 
@@ -422,7 +422,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let pool = [];
         subject.files.forEach(f => {
-            if (state.selectedFiles.includes(f.id)) pool = pool.concat(f.data);
+            if (state.selectedFiles.includes(f.id)) {
+                pool = pool.concat(f.data.map(cloneQuestionForSession));
+            }
         });
 
         if (pool.length === 0) return;
@@ -471,13 +473,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const typeLabels = { 'single': 'ÚNICA', 'multiple': 'MÚLTIPLE', 'boolean': 'BINARIO' };
         const pts = q.points || 1;
 
+        const questionNumber = state.currentQuestionIndex + 1;
+
         els.questionContainer.innerHTML = `
-            <div class="q-badge">${typeLabels[q.type] || 'NODO'} // ${pts} PTS</div>
+            <div class="q-card-header">
+                <div>
+                    <span class="q-eyebrow">Pregunta ${questionNumber} de ${state.sessionQuestions.length}</span>
+                    <span class="q-badge">${typeLabels[q.type] || 'Pregunta'}</span>
+                </div>
+                <div class="q-points">${pts} PTS</div>
+            </div>
             <div class="q-text">${parseMd(q.text)}</div>
             <div class="opts-grid ${q.options.length <= 2 ? 'cols-2' : ''}">
                 ${q.options.map((opt, i) => `
                     <div class="opt-box" data-id="${opt.id}">
-                        <div class="opt-idx">[${String.fromCharCode(65 + i)}]</div>
+                        <div class="opt-idx">${String.fromCharCode(65 + i)}</div>
                         <div class="opt-txt">${parseMdInline(opt.text)}</div>
                     </div>
                 `).join('')}
@@ -572,7 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const q = state.sessionQuestions[state.currentQuestionIndex];
         
         if (state.userAnswers.length === 0) {
-            showToast('DEBES SELECCIONAR UN NODO', 'error');
+            showToast('Selecciona una respuesta', 'error');
             return;
         }
 
@@ -614,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderStudyMode() {
         els.progressBar.style.width = '100%';
-        els.progressText.textContent = 'MODO_INSPECCIÓN';
+        els.progressText.textContent = 'Modo repaso';
         els.submitBtn.classList.add('hidden');
         els.nextBtn.classList.add('hidden');
 
@@ -627,10 +637,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             html += `
                 <div class="study-item">
-                    <div class="study-badge">[${q.type}] // ${q.points || 1} PTS</div>
+                    <div class="study-badge">${q.type} // ${q.points || 1} PTS</div>
                     <div class="study-q">${i + 1}. ${parseMd(q.text)}</div>
                     <div class="study-ans">
-                        <span class="study-ans-lbl">DATO_CORRECTO:</span>
+                        <span class="study-ans-lbl">Respuesta correcta:</span>
                         ${correctText}
                     </div>
                     ${q.feedback ? `<div class="study-expl sys-text">${parseMd(q.feedback)}</div>` : ''}
@@ -638,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         html += '</div>';
 
-        html += `<div style="margin-top: 3rem; text-align:center;"><button class="btn primary huge" onclick="document.getElementById('btn-exit-quiz').click()">FINALIZAR_INSPECCIÓN</button></div>`;
+        html += `<div style="margin-top: 1.4rem; text-align:center;"><button class="btn primary huge" onclick="document.getElementById('btn-exit-quiz').click()">Finalizar repaso</button></div>`;
 
         els.questionContainer.innerHTML = html;
         
@@ -666,7 +676,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
         
         els.resultPercentage.textContent = `${pct}%`;
-        els.resultDetails.innerHTML = `SCORE OBTENIDO: <strong style="color:var(--fg-primary)">${state.score} / ${state.maxScore}</strong> PTS.`;
+        els.resultDetails.innerHTML = `Puntaje: <strong style="color:var(--fg-primary)">${state.score} / ${state.maxScore}</strong> pts.`;
     }
 
     // === UTILS ===
@@ -691,10 +701,35 @@ document.addEventListener('DOMContentLoaded', () => {
         saveState();
     }
 
+    function cloneQuestionForSession(question) {
+        return {
+            ...question,
+            options: Array.isArray(question.options)
+                ? question.options.map(option => ({ ...option }))
+                : []
+        };
+    }
+
+    function randomIndex(maxInclusive) {
+        if (window.crypto?.getRandomValues) {
+            const range = maxInclusive + 1;
+            const max = 0xFFFFFFFF - (0xFFFFFFFF % range);
+            const buffer = new Uint32Array(1);
+
+            do {
+                window.crypto.getRandomValues(buffer);
+            } while (buffer[0] >= max);
+
+            return buffer[0] % range;
+        }
+
+        return Math.floor(Math.random() * (maxInclusive + 1));
+    }
+
     function shuffleArray(arr) {
         const result = [...arr];
         for (let i = result.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
+            const j = randomIndex(i);
             [result[i], result[j]] = [result[j], result[i]];
         }
         return result;

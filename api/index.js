@@ -1,11 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('@neondatabase/serverless');
+const path = require('path');
 
 const app = express();
 app.use(cors());
 // Aumentar el límite de JSON en caso de que suban archivos muy grandes
 app.use(express.json({ limit: '50mb' }));
+app.use(express.static(path.join(__dirname, '..')));
 
 // Conexión a Neon
 const pool = new Pool({

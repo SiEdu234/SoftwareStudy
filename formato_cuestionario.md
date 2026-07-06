@@ -42,25 +42,40 @@ Para aprovechar al máximo las nuevas mejoras en la plataforma y la lógica, el 
       "feedback": "Falso. La Tierra gira alrededor del sol (Heliocentrismo).",
       "points": 5,
       "tags": ["astronomía"],
-      "options": [
-        { "id": "opt_t", "text": "Verdadero", "isCorrect": false },
-        { "id": "opt_f", "text": "Falso", "isCorrect": true }
-      ]
-    }
-  ]
-}
-```
-
-## Novedades del Formato v2.0
-1. **Atributos de Raíz**: Ahora puedes incluir un `title`, `description`, y `version` en la raíz del JSON para documentar mejor de qué trata el set de preguntas. La aplicación lo procesará y extraerá las `questions`.
-2. **Sistema de Puntos (`points`)**: Permite asignar diferente peso a las preguntas.
-3. **Etiquetas (`tags`)**: Un arreglo de strings para clasificar la pregunta. En futuras actualizaciones de la UI permitirá filtrar sesiones de estudio por tags específicos.
-4. **Tipos de Pregunta Soportados (`type`)**:
-   - `single`: Selección única.
-   - `multiple`: Selección múltiple.
-   - `boolean`: Verdadero/Falso.
-
-## Formato XML Soportado
+       "options": [
+         { "id": "opt_t", "text": "Verdadero", "isCorrect": false },
+         { "id": "opt_f", "text": "Falso", "isCorrect": true }
+       ]
+     },
+     {
+       "id": "q_1004",
+       "type": "single",
+       "isCode": true,
+       "text": "function sum(a, b) { return a + b; }\nconsole.log(sum(2, 3));",
+       "feedback": "El código define una función de suma y la llama con 2 y 3, por lo que imprime 5.",
+       "points": 10,
+       "tags": ["programación", "javascript"],
+       "options": [
+         { "id": "opt_a", "text": "3", "isCorrect": false },
+         { "id": "opt_b", "text": "5", "isCorrect": true },
+         { "id": "opt_c", "text": "Error", "isCorrect": false }
+       ]
+     }
+   ]
+ }
+ ```
+ 
+ ## Novedades del Formato v2.0
+ 1. **Atributos de Raíz**: Ahora puedes incluir un `title`, `description`, y `version` en la raíz del JSON para documentar mejor de qué trata el set de preguntas. La aplicación lo procesará y extraerá las `questions`.
+ 2. **Sistema de Puntos (`points`)**: Permite asignar diferente peso a las preguntas.
+ 3. **Etiquetas (`tags`)**: Un arreglo de strings para clasificar la pregunta. En futuras actualizaciones de la UI permitirá filtrar sesiones de estudio por tags específicos.
+ 4. **Tipos de Pregunta Soportados (`type`)**:
+    - `single`: Selección única.
+    - `multiple`: Selección múltiple.
+    - `boolean`: Verdadero/Falso.
+ 5. **Indicador de Código (`isCode`)**: (Opcional) Un campo booleano que indica si la pregunta contiene código fuente puro. Si es `true`, el sistema resaltará automáticamente el bloque de texto con estilo de código e incluirá una anotación de la IA.
+ 
+ ## Formato XML Soportado
 Además del formato JSON, el sistema ha sido actualizado para inyectar archivos `.xml`. La estructura es muy similar y cuenta con el mismo soporte para Markdown/código en el interior de los nodos:
 
 ```xml

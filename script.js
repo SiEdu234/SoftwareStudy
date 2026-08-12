@@ -475,14 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const questionNumber = state.currentQuestionIndex + 1;
 
-        let questionTextHtml = parseMd(q.text);
-        let aiNoteHtml = '';
-        if (q.isCode) {
-            aiNoteHtml = '<div class="sys-text" style="color: var(--accent-2); margin-bottom: 0.5rem; font-style: italic;"><i class="ph ph-robot"></i> IA: He formateado el siguiente bloque como código.</div>';
-            if (!q.text.trim().startsWith('```')) {
-                questionTextHtml = parseMd('```\n' + q.text + '\n```');
-            }
-        }
+        const questionTextHtml = parseMd(q.text);
 
         els.questionContainer.innerHTML = `
             <div class="q-card-header">
@@ -492,7 +485,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="q-points">${pts} PTS</div>
             </div>
-            ${aiNoteHtml}
             <div class="q-text">${questionTextHtml}</div>
             <div class="opts-grid ${q.options.length <= 2 ? 'cols-2' : ''}">
                 ${q.options.map((opt, i) => `
@@ -645,19 +637,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? correctOpts.map(o => `> ${parseMdInline(o.text)}`).join('<br>') 
                 : "NULL";
 
-            let questionTextHtml = parseMd(q.text);
-            let aiNoteHtml = '';
-            if (q.isCode) {
-                aiNoteHtml = '<div class="sys-text" style="color: var(--accent-2); margin-bottom: 0.5rem; font-style: italic;"><i class="ph ph-robot"></i> IA: Formato de código aplicado.</div>';
-                if (!q.text.trim().startsWith('```')) {
-                    questionTextHtml = parseMd('```\n' + q.text + '\n```');
-                }
-            }
+            const questionTextHtml = parseMd(q.text);
 
             html += `
                 <div class="study-item">
                     <div class="study-badge">${q.type} // ${q.points || 1} PTS</div>
-                    ${aiNoteHtml}
                     <div class="study-q">${i + 1}. ${questionTextHtml}</div>
                     <div class="study-ans">
                         <span class="study-ans-lbl">Respuesta correcta:</span>

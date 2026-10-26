@@ -23,9 +23,16 @@
     <div class="app-container">
         <!-- HEADER -->
         <header class="sys-header">
-            <div class="sys-logo">
-                <i class="ph-fill ph-terminal-window"></i>
-                <h1>ESTUDIEN VAGOS</h1>
+            <div class="sys-header-top">
+                <div class="sys-logo">
+                    <i class="ph-fill ph-terminal-window"></i>
+                    <h1>ESTUDIEN VAGOS</h1>
+                </div>
+                <div class="sys-header-actions">
+                    <button id="btn-open-prompts" class="btn secondary small">
+                        <i class="ph ph-sparkle"></i> Prompts & Guía IA
+                    </button>
+                </div>
             </div>
             <div class="sys-marquee">
                 <div class="marquee-content">
@@ -47,9 +54,14 @@
                         <div class="status-dot"></div>
                         <h2>Materias</h2>
                     </div>
-                    <button id="btn-create-subject" class="btn primary">
-                        <i class="ph ph-plus-circle"></i> Nueva materia
-                    </button>
+                    <div class="section-actions">
+                        <button id="btn-open-prompts-dash" class="btn secondary">
+                            <i class="ph ph-sparkle"></i> Prompts IA
+                        </button>
+                        <button id="btn-create-subject" class="btn primary">
+                            <i class="ph ph-plus-circle"></i> Nueva materia
+                        </button>
+                    </div>
                 </div>
 
                 <div id="subjects-grid" class="data-grid">
@@ -71,9 +83,14 @@
                     <div class="panel card">
                         <div class="panel-header">
                             <h3><i class="ph ph-database"></i> Archivos</h3>
-                            <label for="import-file" class="btn secondary small">
-                                <i class="ph ph-upload-simple"></i> Subir preguntas
-                            </label>
+                            <div class="panel-actions">
+                                <button id="btn-open-prompts-subject" class="btn text-only small" title="Ver estructura y prompts para generar preguntas">
+                                    <i class="ph ph-sparkle"></i> Prompts IA
+                                </button>
+                                <label for="import-file" class="btn secondary small">
+                                    <i class="ph ph-upload-simple"></i> Subir preguntas
+                                </label>
+                            </div>
                             <input type="file" id="import-file" accept=".json,.xml" multiple hidden>
                         </div>
                         <div id="files-list" class="list-container">
@@ -158,6 +175,556 @@
             </section>
 
         </main>
+    </div>
+
+    <!-- MODAL: CENTRO DE PROMPTS & ESTRUCTURAS IA -->
+    <div id="prompts-modal" class="sys-modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-prompts-title">
+        <div class="modal-backdrop"></div>
+        <div class="modal-dialog">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <span class="modal-badge"><i class="ph-fill ph-sparkle"></i> ASISTENTE IA & FORMATOS</span>
+                    <h2 id="modal-prompts-title">Generación de Preguntas con IA</h2>
+                    <p class="sys-text">Copia estructuras oficiales o prompts optimizados para convertir PDFs, Words, PowerPoints o apuntes en cuestionarios listos para practicar.</p>
+                </div>
+                <button id="btn-close-prompts" class="btn-modal-close" aria-label="Cerrar modal" title="Cerrar (Esc)">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+
+            <!-- Modal Tabs -->
+            <div class="modal-tabs">
+                <button class="modal-tab active" data-tab="workflow">
+                    <i class="ph ph-lightbulb"></i> ¿Cómo funciona?
+                </button>
+                <button class="modal-tab" data-tab="pdf">
+                    <i class="ph ph-file-pdf"></i> PDFs & Libros
+                </button>
+                <button class="modal-tab" data-tab="word">
+                    <i class="ph ph-file-doc"></i> Word & Apuntes
+                </button>
+                <button class="modal-tab" data-tab="ppt">
+                    <i class="ph ph-presentation"></i> PowerPoint / Slides
+                </button>
+                <button class="modal-tab" data-tab="code">
+                    <i class="ph ph-code"></i> Código & Software
+                </button>
+                <button class="modal-tab" data-tab="json">
+                    <i class="ph ph-brackets-curly"></i> Plantilla JSON
+                </button>
+                <button class="modal-tab" data-tab="xml">
+                    <i class="ph ph-code-block"></i> Plantilla XML
+                </button>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="modal-body">
+
+                <!-- PANE 1: WORKFLOW -->
+                <div class="modal-pane active" data-pane="workflow">
+                    <div class="pane-hero">
+                        <div class="pane-hero-icon"><i class="ph-fill ph-rocket-launch"></i></div>
+                        <div>
+                            <h3>Flujo de Trabajo Paso a Paso</h3>
+                            <p class="sys-text">Genera bancos de preguntas ilimitados en menos de 2 minutos usando cualquier IA generativa (ChatGPT, Claude, Gemini o DeepSeek).</p>
+                        </div>
+                    </div>
+
+                    <div class="workflow-grid">
+                        <div class="step-card">
+                            <div class="step-num">01</div>
+                            <h4>Prepara tu Archivo</h4>
+                            <p>Ubica tu PDF, presentación PowerPoint (.pptx), documento de Word (.docx) o notas de clase.</p>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-num">02</div>
+                            <h4>Copia el Prompt Específico</h4>
+                            <p>Ve a la pestaña correspondiente al tipo de documento en este panel y pulsa <strong>Copiar Prompt</strong>.</p>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-num">03</div>
+                            <h4>Pega en tu IA Favorita</h4>
+                            <p>Adjunta tu archivo en ChatGPT, Claude, DeepSeek o Gemini y pega el prompt. La IA generará el código JSON.</p>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-num">04</div>
+                            <h4>Guarda y Sube</h4>
+                            <p>Guarda el resultado como archivo <code>.json</code> en tu equipo y súbelo con el botón <strong>Subir preguntas</strong>.</p>
+                        </div>
+                    </div>
+
+                    <div class="prompt-box">
+                        <div class="prompt-box-header">
+                            <div>
+                                <span class="tag-pill accent">Universal</span>
+                                <strong>Prompt Rápido Universal</strong>
+                                <span class="sys-text">Ideal si quieres pegar texto directamente o para cualquier tipo de tema.</span>
+                            </div>
+                            <button class="btn primary small btn-copy" data-target="code-prompt-universal">
+                                <i class="ph ph-copy"></i> Copiar Prompt
+                            </button>
+                        </div>
+                        <pre class="code-preview"><code id="code-prompt-universal">Actúa como un profesor universitario y examinador pedagógico experto.
+A partir del material que te proporciono (o documento adjunto), crea un cuestionario de estudio riguroso en formato JSON válido para la plataforma "Estudien Vagos".
+
+Reglas obligatorias:
+1. Responde ÚNICAMENTE con el bloque JSON válido, sin introducciones, saludos ni explicaciones fuera del JSON.
+2. Cada pregunta debe evaluar comprensión profunda, relaciones causa-efecto o aplicación práctica, evitando trivialidades.
+3. El campo "feedback" debe ser formativo: explica con claridad por qué la respuesta correcta es la adecuada y por qué fallan los distractores.
+4. Varía los tipos de pregunta entre "single" (selección única), "multiple" (selección múltiple) y "boolean" (verdadero/falso).
+5. Las opciones incorrectas deben ser verosímiles y desafiantes.
+
+Estructura requerida:
+{
+  "title": "Título del Cuestionario",
+  "description": "Banco de preguntas de estudio",
+  "version": "2.0",
+  "questions": [
+    {
+      "id": "q_1",
+      "type": "single",
+      "text": "¿Enunciado de la pregunta?",
+      "feedback": "Explicación detallada de la respuesta correcta e incorrecta.",
+      "points": 10,
+      "tags": ["tema", "subtema"],
+      "options": [
+        { "id": "opt_a", "text": "Opción A", "isCorrect": true },
+        { "id": "opt_b", "text": "Opción B", "isCorrect": false },
+        { "id": "opt_c", "text": "Opción C", "isCorrect": false },
+        { "id": "opt_d", "text": "Opción D", "isCorrect": false }
+      ]
+    }
+  ]
+}
+
+Por favor, genera [20] preguntas cubriendo el material proporcionado.</code></pre>
+                    </div>
+
+                    <div class="tips-card">
+                        <h4><i class="ph-fill ph-lightbulb-filament"></i> Consejos Pro para Mejores Resultados</h4>
+                        <ul>
+                            <li><strong>Cantidad recomendada:</strong> Pide entre 15 y 25 preguntas por prompt para evitar que el modelo de IA corte la respuesta por límite de salida de tokens.</li>
+                            <li><strong>Si la IA corta el JSON:</strong> Solo responde: <em>"Continúa exactamente desde donde te quedaste, sin repetir nada y asegurándote de cerrar la estructura JSON al final"</em>.</li>
+                            <li><strong>Guardar el archivo:</strong> Abre el Bloc de notas o VS Code, pega el código y guárdalo seleccionando <em>"Todos los archivos (*.*)"</em> con el nombre <code>preguntas.json</code> en codificación UTF-8.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- PANE 2: PDF -->
+                <div class="modal-pane" data-pane="pdf">
+                    <div class="pane-hero">
+                        <div class="pane-hero-icon"><i class="ph-fill ph-file-pdf"></i></div>
+                        <div>
+                            <h3>Prompt Especializado para PDFs, Libros y Papers</h3>
+                            <p class="sys-text">Optimizado para documentos densos, capítulos extensos de libros universitarios, guías de cátedra y artículos científicos.</p>
+                        </div>
+                    </div>
+
+                    <div class="features-badge-group">
+                        <span class="feat-badge"><i class="ph ph-check"></i> Cobertura total (no solo intro)</span>
+                        <span class="feat-badge"><i class="ph ph-check"></i> Citas y argumentos técnicos en feedback</span>
+                        <span class="feat-badge"><i class="ph ph-check"></i> Equilibrio conceptual y práctico</span>
+                    </div>
+
+                    <div class="prompt-box">
+                        <div class="prompt-box-header">
+                            <div>
+                                <span class="tag-pill">Documentos PDF</span>
+                                <strong>Prompt para ChatGPT / Claude / Gemini / DeepSeek</strong>
+                            </div>
+                            <button class="btn primary small btn-copy" data-target="code-prompt-pdf">
+                                <i class="ph ph-copy"></i> Copiar Prompt PDF
+                            </button>
+                        </div>
+                        <pre class="code-preview"><code id="code-prompt-pdf">Actúa como un profesor universitario y examinador académico titular.
+He adjuntado un documento PDF (libro, paper de investigación, guía técnica o normativa).
+Tu misión es analizar exhaustivamente TODO el contenido del PDF y generar un banco de preguntas riguroso en formato JSON válido para la plataforma "Estudien Vagos".
+
+Instrucciones prioritarias para este PDF:
+1. Cobertura distribuida: No te concentres únicamente en las primeras páginas. Distribuye las preguntas a lo largo de todo el documento (inicio, desarrollo, metodologías, ejemplos y conclusiones).
+2. Profundidad académica: Diseña preguntas que evalúen comprensión conceptual (30%), análisis causa-efecto o contrastes teóricos (40%), y resolución de casos o escenarios de aplicación (30%).
+3. Feedback fundamentado: En el campo "feedback", explica con detalle la razón pedagógica y técnica de la respuesta correcta citando o parafraseando la tesis del texto, y aclara el error de las alternativas falsas.
+4. Diversidad de preguntas:
+   - "single": Para conceptos nucleares con 4 opciones (1 correcta).
+   - "multiple": Para características, condiciones o principios con 2 o más opciones correctas.
+   - "boolean": Para postulados clave o afirmaciones con matices técnicos (Verdadero/Falso).
+5. Salida estricta: Devuelve EXCLUSIVAMENTE el bloque JSON válido, sin texto adicional antes ni después.
+
+Estructura JSON:
+{
+  "title": "Tema extraído del PDF",
+  "description": "Evaluación basada en el documento PDF adjunto",
+  "version": "2.0",
+  "questions": [
+    {
+      "id": "q_pdf_1",
+      "type": "single",
+      "text": "¿Pregunta académica basada en el contenido del PDF?",
+      "feedback": "Justificación fundamentada en el texto del documento que explica la respuesta correcta.",
+      "points": 10,
+      "tags": ["capitulo_o_seccion", "concepto_clave"],
+      "options": [
+        { "id": "opt_a", "text": "Distractor verosímil A", "isCorrect": false },
+        { "id": "opt_b", "text": "Respuesta correcta B", "isCorrect": true },
+        { "id": "opt_c", "text": "Distractor conceptual C", "isCorrect": false },
+        { "id": "opt_d", "text": "Distractor común D", "isCorrect": false }
+      ]
+    }
+  ]
+}
+
+Genera [20] preguntas cubriendo de forma equilibrada todo el PDF adjunto.</code></pre>
+                    </div>
+                </div>
+
+                <!-- PANE 3: WORD -->
+                <div class="modal-pane" data-pane="word">
+                    <div class="pane-hero">
+                        <div class="pane-hero-icon"><i class="ph-fill ph-file-doc"></i></div>
+                        <div>
+                            <h3>Prompt para Word (.docx), Resúmenes y Apuntes</h3>
+                            <p class="sys-text">Diseñado para apuntes de clase tomados por estudiantes, resúmenes de estudio, temarios de examen y tablas comparativas.</p>
+                        </div>
+                    </div>
+
+                    <div class="features-badge-group">
+                        <span class="feat-badge"><i class="ph ph-check"></i> Detecta énfasis del profesor</span>
+                        <span class="feat-badge"><i class="ph ph-check"></i> Limpia ambigüedades de notas rápidas</span>
+                        <span class="feat-badge"><i class="ph ph-check"></i> Trampas frecuentes de examen</span>
+                    </div>
+
+                    <div class="prompt-box">
+                        <div class="prompt-box-header">
+                            <div>
+                                <span class="tag-pill">Word / Apuntes</span>
+                                <strong>Prompt para ChatGPT / Claude / Gemini / DeepSeek</strong>
+                            </div>
+                            <button class="btn primary small btn-copy" data-target="code-prompt-word">
+                                <i class="ph ph-copy"></i> Copiar Prompt Word
+                            </button>
+                        </div>
+                        <pre class="code-preview"><code id="code-prompt-word">Actúa como un tutor universitario y diseñador de simulacros de examen.
+He adjuntado un documento de Word (.docx o resumen de apuntes tomados en clase).
+Tu objetivo es convertir estos apuntes en un banco de preguntas tipo test de alto impacto en formato JSON para la plataforma "Estudien Vagos".
+
+Instrucciones específicas para apuntes y resúmenes:
+1. Énfasis de cátedra: Identifica los conceptos donde el profesor o autor puso mayor énfasis (definiciones destacadas, advertencias típicas de examen "¡ojo con esto!", listas y comparativas).
+2. Claridad y precisión: Corrige posibles frases informales o esquemáticas de los apuntes para redactar preguntas con enunciados formales, inequívocos y profesionales.
+3. Distractores realistas: En las opciones erróneas, incluye las confusiones y malas interpretaciones más frecuentes entre los alumnos en este tema.
+4. Feedback de refuerzo: El campo "feedback" debe funcionar como una mini-lección que recuerde la regla nemotécnica, principio o resumen clave.
+5. Salida estricta: Devuelve ÚNICAMENTE el código JSON válido.
+
+Estructura JSON:
+{
+  "title": "Nombre de la Materia - Unidad",
+  "description": "Simulacro de examen basado en apuntes de clase",
+  "version": "2.0",
+  "questions": [
+    {
+      "id": "q_doc_1",
+      "type": "single",
+      "text": "¿Enunciado formulado a partir de los apuntes?",
+      "feedback": "Explicación que resuelve la duda y refuerza la regla clave vista en clase.",
+      "points": 10,
+      "tags": ["unidad_estudio", "apuntes"],
+      "options": [
+        { "id": "opt_a", "text": "Opción correcta fundamentada", "isCorrect": true },
+        { "id": "opt_b", "text": "Confusión típica del alumno", "isCorrect": false },
+        { "id": "opt_c", "text": "Concepto de otro tema", "isCorrect": false },
+        { "id": "opt_d", "text": "Afirmación parcialmente cierta pero incompleta", "isCorrect": false }
+      ]
+    }
+  ]
+}
+
+Genera [20] preguntas a partir del archivo Word adjunto.</code></pre>
+                    </div>
+                </div>
+
+                <!-- PANE 4: PPT -->
+                <div class="modal-pane" data-pane="ppt">
+                    <div class="pane-hero">
+                        <div class="pane-hero-icon"><i class="ph-fill ph-presentation"></i></div>
+                        <div>
+                            <h3>Prompt para Diapositivas PowerPoint (.pptx / Slides PDF)</h3>
+                            <p class="sys-text">Especialmente calibrado para diapositivas con viñetas breves, esquemas y diagramas donde se requiere reconstruir el contexto completo.</p>
+                        </div>
+                    </div>
+
+                    <div class="features-badge-group">
+                        <span class="feat-badge"><i class="ph ph-check"></i> Reconstruye contexto faltante</span>
+                        <span class="feat-badge"><i class="ph ph-check"></i> Preguntas de relación entre láminas</span>
+                        <span class="feat-badge"><i class="ph ph-check"></i> Feedback ampliado con la teoría completa</span>
+                    </div>
+
+                    <div class="prompt-box">
+                        <div class="prompt-box-header">
+                            <div>
+                                <span class="tag-pill">PowerPoint / Slides</span>
+                                <strong>Prompt para ChatGPT / Claude / Gemini / DeepSeek</strong>
+                            </div>
+                            <button class="btn primary small btn-copy" data-target="code-prompt-ppt">
+                                <i class="ph ph-copy"></i> Copiar Prompt PPT
+                            </button>
+                        </div>
+                        <pre class="code-preview"><code id="code-prompt-ppt">Actúa como un profesor universitario preparando el examen oficial de su cátedra a partir de las diapositivas de clase (PowerPoint / Keynote).
+He adjuntado la presentación. Dado que las diapositivas suelen contener viñetas esquemáticas, frases cortas y diagramas, tu labor es reconstruir e inferir el contexto completo de la explicación docente y generar preguntas de examen sólidas en formato JSON para "Estudien Vagos".
+
+Instrucciones esenciales para Diapositivas:
+1. Reconstrucción contextual: No te limites a copiar y pegar las viñetas en la pregunta. Profundiza en el concepto integral detrás de cada diapositiva y explica la lógica de los diagramas o flujos expuestos.
+2. Relación y síntesis: Diseña preguntas que conecten ideas de varias diapositivas (comparación de arquitecturas, ventajas vs inconvenientes, fases de un proceso o taxonomías).
+3. Feedback ampliado: Ya que la diapositiva original carece de texto explicativo continuo, usa el campo "feedback" para proveer la explicación completa y enriquecida que el profesor daría oralmente en clase.
+4. Formato estricto: Devuelve ÚNICAMENTE el bloque JSON válido, sin bloques de texto conversacional.
+
+Estructura JSON:
+{
+  "title": "Tema de la Presentación",
+  "description": "Cuestionario de estudio generado a partir de diapositivas",
+  "version": "2.0",
+  "questions": [
+    {
+      "id": "q_ppt_1",
+      "type": "single",
+      "text": "¿Pregunta que evalúa el fondo conceptual de la lámina?",
+      "feedback": "Explicación integral que profundiza y contextualiza la viñeta de la diapositiva.",
+      "points": 10,
+      "tags": ["modulo", "presentacion"],
+      "options": [
+        { "id": "opt_a", "text": "Alternativa A", "isCorrect": false },
+        { "id": "opt_b", "text": "Alternativa B (Correcta)", "isCorrect": true },
+        { "id": "opt_c", "text": "Alternativa C", "isCorrect": false },
+        { "id": "opt_d", "text": "Alternativa D", "isCorrect": false }
+      ]
+    }
+  ]
+}
+
+Genera [15 a 20] preguntas profundas a partir de las diapositivas adjuntas.</code></pre>
+                    </div>
+                </div>
+
+                <!-- PANE 5: CODE -->
+                <div class="modal-pane" data-pane="code">
+                    <div class="pane-hero">
+                        <div class="pane-hero-icon"><i class="ph-fill ph-code"></i></div>
+                        <div>
+                            <h3>Prompt para Programación, Algoritmos & Software</h3>
+                            <p class="sys-text">Optimizado para ingeniería de software, desarrollo web, estructuras de datos, algoritmos, bases de datos y sistemas.</p>
+                        </div>
+                    </div>
+
+                    <div class="features-badge-group">
+                        <span class="feat-badge"><i class="ph ph-check"></i> Bloques de código Markdown</span>
+                        <span class="feat-badge"><i class="ph ph-check"></i> Activa "isCode": true</span>
+                        <span class="feat-badge"><i class="ph ph-check"></i> Salidas (output), bugs y complejidad Big-O</span>
+                    </div>
+
+                    <div class="prompt-box">
+                        <div class="prompt-box-header">
+                            <div>
+                                <span class="tag-pill">Software / Código</span>
+                                <strong>Prompt para ChatGPT / Claude / Gemini / DeepSeek</strong>
+                            </div>
+                            <button class="btn primary small btn-copy" data-target="code-prompt-code">
+                                <i class="ph ph-copy"></i> Copiar Prompt Código
+                            </button>
+                        </div>
+                        <pre class="code-preview"><code id="code-prompt-code">Actúa como un evaluador técnico senior y profesor de Ciencias de la Computación / Ingeniería de Software.
+A partir del documento o temario adjunto, genera un examen técnico en formato JSON válido para la plataforma "Estudien Vagos".
+
+Instrucciones para preguntas con código:
+1. Snippets con Markdown: Envuelve los fragmentos de código dentro del campo "text" usando triples comillas invertidas y el lenguaje (ej: ```javascript ... ``` o ```python ... ```).
+2. Campo isCode: Cuando la pregunta contenga un fragmento de código principal para analizar, incluye `"isCode": true`.
+3. Variedad de retos técnicos:
+   - Salida por consola ("¿Qué imprime el siguiente código?").
+   - Detección y corrección de bugs ("¿Cuál es el error en la función?").
+   - Complejidad algorítmica (Notación Big-O en tiempo y espacio).
+   - Patrones de diseño, concurrencia o buenas prácticas de refactorización.
+4. Traza detallada en Feedback: Explica paso a paso la ejecución del código en el campo "feedback" para entender el flujo mental.
+5. Salida estricta: Devuelve ÚNICAMENTE el JSON válido.
+
+Estructura JSON:
+{
+  "title": "Evaluación Técnica de Programación",
+  "description": "Preguntas con análisis de código y buenas prácticas",
+  "version": "2.0",
+  "questions": [
+    {
+      "id": "q_code_1",
+      "type": "single",
+      "isCode": true,
+      "text": "¿Cuál es la salida del siguiente código?\n```javascript\nconst nums = [10, 20, 30];\nconst res = nums.filter(n => n > 15).map(n => n * 2);\nconsole.log(res[0]);\n```",
+      "feedback": "El método filter conserva [20, 30]. Luego map multiplica por 2 obteniendo [40, 60]. El primer elemento res[0] es 40.",
+      "points": 10,
+      "tags": ["javascript", "arrays", "programacion"],
+      "options": [
+        { "id": "opt_a", "text": "20", "isCorrect": false },
+        { "id": "opt_b", "text": "40", "isCorrect": true },
+        { "id": "opt_c", "text": "30", "isCorrect": false },
+        { "id": "opt_d", "text": "NaN", "isCorrect": false }
+      ]
+    }
+  ]
+}
+
+Genera [15] preguntas técnicas a partir del material proporcionado.</code></pre>
+                    </div>
+                </div>
+
+                <!-- PANE 6: JSON STRUCTURE -->
+                <div class="modal-pane" data-pane="json">
+                    <div class="pane-hero">
+                        <div class="pane-hero-icon"><i class="ph-fill ph-brackets-curly"></i></div>
+                        <div>
+                            <h3>Estructura Oficial JSON (v2.0)</h3>
+                            <p class="sys-text">Esta es la especificación exacta que interpreta el motor de "Estudien Vagos". Puedes copiarla o descargarla como archivo de plantilla.</p>
+                        </div>
+                    </div>
+
+                    <div class="schema-legend">
+                        <div class="legend-item"><code>title</code> <span>Nombre del set o materia</span></div>
+                        <div class="legend-item"><code>type</code> <span>"single" | "multiple" | "boolean"</span></div>
+                        <div class="legend-item"><code>points</code> <span>Puntos de la pregunta (número)</span></div>
+                        <div class="legend-item"><code>tags</code> <span>Arreglo de etiquetas clasificatorias</span></div>
+                        <div class="legend-item"><code>feedback</code> <span>Explicación formativa de la respuesta</span></div>
+                        <div class="legend-item"><code>isCode</code> <span>(Opcional) Activa visualización de código</span></div>
+                        <div class="legend-item"><code>isCorrect</code> <span>Booleano (true o false) por cada opción</span></div>
+                    </div>
+
+                    <div class="prompt-box">
+                        <div class="prompt-box-header">
+                            <div>
+                                <span class="tag-pill accent">JSON Oficial</span>
+                                <strong>Plantilla JSON Completa y Lista para Usar</strong>
+                            </div>
+                            <div class="prompt-header-actions">
+                                <button id="btn-download-json-template" class="btn secondary small">
+                                    <i class="ph ph-download-simple"></i> Descargar .json
+                                </button>
+                                <button class="btn primary small btn-copy" data-target="code-template-json">
+                                    <i class="ph ph-copy"></i> Copiar JSON
+                                </button>
+                            </div>
+                        </div>
+                        <pre class="code-preview"><code id="code-template-json">{
+  "title": "Materia de Ejemplo",
+  "description": "Plantilla oficial de cuestionario compatible con Estudien Vagos v2.0",
+  "version": "2.0",
+  "questions": [
+    {
+      "id": "q_1001",
+      "type": "single",
+      "text": "¿Cuál es la principal ventaja de utilizar índices en una base de datos relacional?",
+      "feedback": "Los índices aceleran significativamente las consultas de búsqueda (SELECT) reduciendo el escaneo secuencial de tablas, a costa de un pequeño sobrecosto en operaciones de inserción y actualización (INSERT/UPDATE).",
+      "points": 10,
+      "tags": ["bases-de-datos", "sql", "rendimiento"],
+      "options": [
+        { "id": "opt_a", "text": "Acelerar las consultas de lectura a costa de escrituras más lentas", "isCorrect": true },
+        { "id": "opt_b", "text": "Eliminar la necesidad de claves foráneas", "isCorrect": false },
+        { "id": "opt_c", "text": "Reducir el espacio de almacenamiento físico del disco", "isCorrect": false },
+        { "id": "opt_d", "text": "Garantizar que no existan datos duplicados en ninguna columna", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q_1002",
+      "type": "multiple",
+      "text": "¿Cuáles de los siguientes son pilares fundamentales de la Programación Orientada a Objetos (POO)?",
+      "feedback": "Los cuatro pilares clásicos de la POO son Encapsulamiento, Herencia, Polimorfismo y Abstracción. La normalización es de bases de datos y la concurrencia es un modelo de ejecución.",
+      "points": 15,
+      "tags": ["poo", "arquitectura", "conceptos"],
+      "options": [
+        { "id": "opt_1", "text": "Encapsulamiento", "isCorrect": true },
+        { "id": "opt_2", "text": "Polimorfismo", "isCorrect": true },
+        { "id": "opt_3", "text": "Normalización relacional", "isCorrect": false },
+        { "id": "opt_4", "text": "Herencia", "isCorrect": true }
+      ]
+    },
+    {
+      "id": "q_1003",
+      "type": "boolean",
+      "text": "En el protocolo HTTP/1.1, las conexiones TCP son no persistentes por defecto.",
+      "feedback": "Falso. En HTTP/1.1 la cabecera Keep-Alive está habilitada por defecto, permitiendo reutilizar una misma conexión TCP para múltiples peticiones consecutivas.",
+      "points": 5,
+      "tags": ["redes", "http"],
+      "options": [
+        { "id": "opt_v", "text": "Verdadero", "isCorrect": false },
+        { "id": "opt_f", "text": "Falso", "isCorrect": true }
+      ]
+    },
+    {
+      "id": "q_1004",
+      "type": "single",
+      "isCode": true,
+      "text": "Analiza la siguiente función recursiva en JavaScript:\n```javascript\nfunction factorial(n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}\nconsole.log(factorial(4));\n```\n¿Cuál es el valor impreso en consola?",
+      "feedback": "factorial(4) calcula: 4 * 3 * 2 * 1 = 24.",
+      "points": 10,
+      "tags": ["algoritmos", "recursividad", "javascript"],
+      "options": [
+        { "id": "opt_a", "text": "16", "isCorrect": false },
+        { "id": "opt_b", "text": "24", "isCorrect": true },
+        { "id": "opt_c", "text": "12", "isCorrect": false },
+        { "id": "opt_d", "text": "4", "isCorrect": false }
+      ]
+    }
+  ]
+}</code></pre>
+                    </div>
+                </div>
+
+                <!-- PANE 7: XML STRUCTURE -->
+                <div class="modal-pane" data-pane="xml">
+                    <div class="pane-hero">
+                        <div class="pane-hero-icon"><i class="ph-fill ph-code-block"></i></div>
+                        <div>
+                            <h3>Estructura XML Alternativa</h3>
+                            <p class="sys-text">Si prefieres o tu herramienta exporta en XML, el motor de "Estudien Vagos" lo analiza y lo procesa automáticamente al importar archivos con extensión <code>.xml</code>.</p>
+                        </div>
+                    </div>
+
+                    <div class="prompt-box">
+                        <div class="prompt-box-header">
+                            <div>
+                                <span class="tag-pill">Formato XML</span>
+                                <strong>Plantilla XML Oficial</strong>
+                            </div>
+                            <button class="btn primary small btn-copy" data-target="code-template-xml">
+                                <i class="ph ph-copy"></i> Copiar XML
+                            </button>
+                        </div>
+                        <pre class="code-preview"><code id="code-template-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;quiz&gt;
+    &lt;title&gt;Nombre del Cuestionario o Materia&lt;/title&gt;
+    &lt;question id="q_1001" type="single" points="10"&gt;
+        &lt;text&gt;¿Cuál es la principal ventaja de utilizar índices en una base de datos relacional?&lt;/text&gt;
+        &lt;feedback&gt;Aceleran significativamente las consultas de lectura (SELECT) reduciendo el tiempo de escaneo.&lt;/feedback&gt;
+        &lt;option id="opt_a" isCorrect="true"&gt;Acelerar consultas de lectura a costa de escrituras más lentas&lt;/option&gt;
+        &lt;option id="opt_b" isCorrect="false"&gt;Eliminar la necesidad de claves foráneas&lt;/option&gt;
+        &lt;option id="opt_c" isCorrect="false"&gt;Reducir el tamaño de disco requerido&lt;/option&gt;
+        &lt;option id="opt_d" isCorrect="false"&gt;Prevenir datos duplicados en todas las tablas&lt;/option&gt;
+    &lt;/question&gt;
+
+    &lt;question id="q_1002" type="multiple" points="15"&gt;
+        &lt;text&gt;Selecciona los pilares de la Programación Orientada a Objetos:&lt;/text&gt;
+        &lt;feedback&gt;Encapsulamiento, Herencia, Polimorfismo y Abstracción son los pilares fundamentales.&lt;/feedback&gt;
+        &lt;option id="opt_1" isCorrect="true"&gt;Encapsulamiento&lt;/option&gt;
+        &lt;option id="opt_2" isCorrect="true"&gt;Polimorfismo&lt;/option&gt;
+        &lt;option id="opt_3" isCorrect="false"&gt;Normalización relacional&lt;/option&gt;
+        &lt;option id="opt_4" isCorrect="true"&gt;Herencia&lt;/option&gt;
+    &lt;/question&gt;
+
+    &lt;question id="q_1003" type="boolean" points="5"&gt;
+        &lt;text&gt;HTTP/1.1 mantiene conexiones TCP persistentes por defecto.&lt;/text&gt;
+        &lt;feedback&gt;Verdadero. En HTTP/1.1 el encabezado Keep-Alive se activa de forma predeterminada.&lt;/feedback&gt;
+        &lt;option id="opt_v" isCorrect="true"&gt;Verdadero&lt;/option&gt;
+        &lt;option id="opt_f" isCorrect="false"&gt;Falso&lt;/option&gt;
+    &lt;/question&gt;
+&lt;/quiz&gt;</code></pre>
+                    </div>
+                </div>
+
+            </div>
+        </div>
     </div>
 
     <!-- Toast Notification -->

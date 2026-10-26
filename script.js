@@ -93,7 +93,13 @@ document.addEventListener('DOMContentLoaded', () => {
         scoreCircle: document.getElementById('score-circle-path'),
         returnSubjectBtn: document.getElementById('btn-return-subject'),
         retryBtn: document.getElementById('btn-retry'),
-        toast: document.getElementById('toast')
+        toast: document.getElementById('toast'),
+        promptsModal: document.getElementById('prompts-modal'),
+        closePromptsBtn: document.getElementById('btn-close-prompts'),
+        openPromptsBtn: document.getElementById('btn-open-prompts'),
+        openPromptsDashBtn: document.getElementById('btn-open-prompts-dash'),
+        openPromptsSubjectBtn: document.getElementById('btn-open-prompts-subject'),
+        downloadJsonBtn: document.getElementById('btn-download-json-template')
     };
 
     // === INITIALIZATION ===
@@ -144,6 +150,115 @@ document.addEventListener('DOMContentLoaded', () => {
 
     els.returnSubjectBtn.addEventListener('click', () => switchView('subject'));
     els.retryBtn.addEventListener('click', startSession);
+
+    // === MODAL PROMPTS & ASISTENTE IA ===
+    function openPromptsModal(tabId = null) {
+        if (!els.promptsModal) return;
+        els.promptsModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        if (tabId) {
+            activatePromptsTab(tabId);
+        }
+    }
+
+    function closePromptsModal() {
+        if (!els.promptsModal) return;
+        els.promptsModal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    function activatePromptsTab(tabName) {
+        if (!els.promptsModal) return;
+        const tabs = els.promptsModal.querySelectorAll('.modal-tab');
+        const panes = els.promptsModal.querySelectorAll('.modal-pane');
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+        panes.forEach(p => p.classList.toggle('active', p.dataset.pane === tabName));
+    }
+
+    async function copyTargetText(targetId, btn) {
+        const targetEl = document.getElementById(targetId);
+        if (!targetEl) return;
+        const textToCopy = targetEl.textContent;
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(textToCopy);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = textToCopy;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+            if (btn) {
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="ph-bold ph-check"></i> ¡Copiado!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('copied');
+                }, 2000);
+            }
+            showToast("¡Copiado al portapapeles!");
+        } catch (err) {
+            console.error("Error al copiar:", err);
+            showToast("No se pudo copiar automáticamente", "error");
+        }
+    }
+
+    function downloadJSONTemplate() {
+        const templateEl = document.getElementById('code-template-json');
+        if (!templateEl) return;
+        const jsonContent = templateEl.textContent;
+        const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'plantilla_cuestionario.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast("Plantilla descargada: plantilla_cuestionario.json");
+    }
+
+    if (els.openPromptsBtn) els.openPromptsBtn.addEventListener('click', () => openPromptsModal());
+    if (els.openPromptsDashBtn) els.openPromptsDashBtn.addEventListener('click', () => openPromptsModal());
+    if (els.openPromptsSubjectBtn) els.openPromptsSubjectBtn.addEventListener('click', () => openPromptsModal());
+    if (els.closePromptsBtn) els.closePromptsBtn.addEventListener('click', closePromptsModal);
+
+    if (els.promptsModal) {
+        const backdrop = els.promptsModal.querySelector('.modal-backdrop');
+        if (backdrop) backdrop.addEventListener('click', closePromptsModal);
+
+        els.promptsModal.querySelectorAll('.modal-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const tabBtn = e.currentTarget;
+                activatePromptsTab(tabBtn.dataset.tab);
+            });
+        });
+
+        els.promptsModal.querySelectorAll('.btn-copy').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const button = e.currentTarget;
+                const targetId = button.dataset.target;
+                copyTargetText(targetId, button);
+            });
+        });
+    }
+
+    if (els.downloadJsonBtn) {
+        els.downloadJsonBtn.addEventListener('click', downloadJSONTemplate);
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && els.promptsModal && !els.promptsModal.classList.contains('hidden')) {
+            closePromptsModal();
+        }
+    });
 
     // === API LOGIC ===
     

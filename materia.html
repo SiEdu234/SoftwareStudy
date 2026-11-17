@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Materia | Estudien Vagos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-page="subject">
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="sys-header">
+            <div class="sys-header-top">
+                <a href="index.html" class="sys-logo">
+                    <i class="ph-fill ph-terminal-window"></i>
+                    <h1>ESTUDIEN VAGOS</h1>
+                </a>
+                <nav class="sys-header-actions" aria-label="Navegación principal">
+                    <a href="index.html" class="btn secondary small">
+                        <i class="ph ph-books"></i> Materias
+                    </a>
+                    <a href="prompts.html" id="link-prompts-header" class="btn secondary small">
+                        <i class="ph ph-sparkle"></i> Prompts & Guía IA
+                    </a>
+                </nav>
+            </div>
+            <div class="sys-marquee">
+                <div class="marquee-content">
+                    <span>// GESTIÓN DE ARCHIVOS DE ESTUDIO</span>
+                    <span>// SELECCIONA TUS BANCOS DE PREGUNTAS</span>
+                    <span>// FORMATO JSON Y XML COMPATIBLE</span>
+                </div>
+            </div>
+        </header>
+
+        <main id="main-content" class="sys-main">
+            <section class="view active fade-in">
+                <div class="section-header">
+                    <div class="header-left">
+                        <a href="index.html" class="btn secondary small" title="Volver a todas las materias">
+                            <i class="ph ph-arrow-left"></i> Materias
+                        </a>
+                        <div>
+                            <span class="breadcrumb-label">MATERIA SELECCIONADA</span>
+                            <h2 id="subject-title">Cargando materia...</h2>
+                        </div>
+                    </div>
+                    <div class="section-actions">
+                        <a href="prompts.html" id="link-prompts-subject" class="btn secondary small">
+                            <i class="ph ph-sparkle"></i> Generar con IA
+                        </a>
+                        <button id="btn-delete-subject" class="btn text-only alert small" title="Eliminar materia">
+                            <i class="ph ph-trash"></i> Eliminar materia
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-layout">
+                    <!-- Files List Panel -->
+                    <div class="panel card" id="drop-zone">
+                        <div class="panel-header">
+                            <div>
+                                <h3><i class="ph ph-database"></i> Archivos de preguntas</h3>
+                                <span id="files-summary-text" class="sys-text">0 archivos</span>
+                            </div>
+                            <div class="panel-actions">
+                                <button id="btn-select-all" class="btn text-only small hidden">
+                                    Seleccionar todos
+                                </button>
+                                <label for="import-file" class="btn primary small">
+                                    <i class="ph ph-upload-simple"></i> Subir (.json / .xml)
+                                </label>
+                                <input type="file" id="import-file" accept=".json,.xml" multiple hidden>
+                            </div>
+                        </div>
+
+                        <div id="files-list" class="list-container">
+                            <p class="sys-text" style="padding:1.5rem; text-align:center;">Cargando archivos...</p>
+                        </div>
+                    </div>
+
+                    <!-- Session Config Panel -->
+                    <div class="panel card config-panel">
+                        <div class="panel-header">
+                            <div>
+                                <h3><i class="ph ph-sliders"></i> Configurar Sesión</h3>
+                                <span class="sys-text">Personaliza tu práctica o repaso</span>
+                            </div>
+                        </div>
+
+                        <div class="selection-summary-box" id="selection-summary">
+                            <i class="ph ph-check-square-offset"></i>
+                            <div>
+                                <strong id="selected-files-count">0 archivos seleccionados</strong>
+                                <span id="selected-questions-count" class="sys-text">0 preguntas disponibles</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Cantidad de preguntas</label>
+                            <div class="grid-options grid-options-5">
+                                <button type="button" class="option-btn" data-count="10">10</button>
+                                <button type="button" class="option-btn" data-count="20">20</button>
+                                <button type="button" class="option-btn" data-count="30">30</button>
+                                <button type="button" class="option-btn" data-count="50">50</button>
+                                <button type="button" class="option-btn active" data-count="all">Todas</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Modo de estudio</label>
+                            <div class="segmented-control">
+                                <button type="button" class="segment active" data-mode="test">
+                                    <i class="ph ph-exam"></i> Práctica (Test)
+                                </button>
+                                <button type="button" class="segment" data-mode="study">
+                                    <i class="ph ph-book-open"></i> Repaso (Lectura)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="spacer"></div>
+                        <button id="btn-start-session" class="btn primary huge" disabled>
+                            Selecciona archivos para comenzar
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="sys-toast hidden">
+        <i class="ph ph-info"></i>
+        <span class="toast-msg">Mensaje del sistema</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

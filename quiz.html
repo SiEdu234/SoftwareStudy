@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sesión de Estudio | Estudien Vagos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Marked & Highlight.js loaded ONLY on pages that render markdown/code -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/outrun-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-page="quiz">
+    <div class="app-container">
+        <!-- COMPACT QUIZ HEADER -->
+        <header class="sys-header">
+            <div class="sys-header-top">
+                <a href="index.html" class="sys-logo">
+                    <i class="ph-fill ph-terminal-window"></i>
+                    <h1>ESTUDIEN VAGOS</h1>
+                </a>
+                <div class="sys-header-actions">
+                    <span id="quiz-subject-badge" class="tag-pill accent">Cargando...</span>
+                    <a href="index.html" id="btn-exit-quiz" class="btn secondary small alert-border">
+                        <i class="ph ph-arrow-u-up-left"></i> Volver a la materia
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <main id="main-content" class="sys-main">
+            <section class="view active fade-in">
+                <div class="hud-top">
+                    <div class="hud-meta">
+                        <span id="hud-mode-label" class="hud-badge">PRÁCTICA</span>
+                        <span id="hud-score-label" class="sys-text">0 PTS</span>
+                    </div>
+                    <div class="hud-progress-container">
+                        <div class="hud-progress-bar" id="progress-bar"></div>
+                    </div>
+                    <div class="hud-counter" id="quiz-progress-text">0 / 0</div>
+                </div>
+
+                <!-- Study Mode Search Bar (shown only in study mode) -->
+                <div id="study-toolbar" class="study-toolbar hidden">
+                    <div class="search-box full-width">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input type="search" id="search-study-questions" placeholder="Filtrar preguntas o conceptos en este repaso..." autocomplete="off">
+                    </div>
+                    <button id="btn-switch-to-test" class="btn primary small">
+                        <i class="ph ph-lightning"></i> Practicar este set
+                    </button>
+                </div>
+
+                <div class="quiz-canvas fade-in" id="question-container">
+                    <p class="sys-text" style="text-align:center; padding: 2rem;">Preparando banco de preguntas...</p>
+                </div>
+
+                <div class="hud-bottom" id="quiz-controls">
+                    <span class="kbd-hint sys-text">Atajos: <kbd>1-4</kbd> o <kbd>A-D</kbd> elegir · <kbd>Enter</kbd> continuar</span>
+                    <div class="hud-bottom-btns">
+                        <button id="submit-btn" class="btn primary">Comprobar <i class="ph ph-check"></i></button>
+                        <button id="next-btn" class="btn primary hidden">Siguiente <i class="ph ph-arrow-right"></i></button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="sys-toast hidden">
+        <i class="ph ph-info"></i>
+        <span class="toast-msg">Mensaje del sistema</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

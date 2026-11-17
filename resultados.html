@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados | Estudien Vagos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/outrun-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-page="results">
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="sys-header">
+            <div class="sys-header-top">
+                <a href="index.html" class="sys-logo">
+                    <i class="ph-fill ph-terminal-window"></i>
+                    <h1>ESTUDIEN VAGOS</h1>
+                </a>
+                <nav class="sys-header-actions" aria-label="Navegación principal">
+                    <a href="index.html" class="btn secondary small">
+                        <i class="ph ph-books"></i> Materias
+                    </a>
+                    <a href="prompts.html" class="btn secondary small">
+                        <i class="ph ph-sparkle"></i> Prompts & Guía IA
+                    </a>
+                </nav>
+            </div>
+        </header>
+
+        <main id="main-content" class="sys-main">
+            <section class="view active fade-in">
+                <div class="results-container">
+                    <div class="results-visual">
+                        <svg viewBox="0 0 100 100" class="tech-ring">
+                            <circle class="ring-bg" cx="50" cy="50" r="45"></circle>
+                            <circle class="ring-progress" id="score-circle-path" cx="50" cy="50" r="45"></circle>
+                        </svg>
+                        <div class="results-score-text" id="result-percentage">0%</div>
+                    </div>
+
+                    <div class="results-info">
+                        <span id="result-subject-name" class="tag-pill accent">MATERIA</span>
+                        <h2 class="result-title" id="result-headline">Sesión completada</h2>
+                        <p id="result-details" class="sys-text">Calculando métricas...</p>
+
+                        <div class="results-stats-grid">
+                            <div class="stat-pill success">
+                                <span class="stat-val" id="stat-correct">0</span>
+                                <span class="stat-lbl">Correctas</span>
+                            </div>
+                            <div class="stat-pill danger">
+                                <span class="stat-val" id="stat-incorrect">0</span>
+                                <span class="stat-lbl">Incorrectas</span>
+                            </div>
+                            <div class="stat-pill neutral">
+                                <span class="stat-val" id="stat-points">0 / 0</span>
+                                <span class="stat-lbl">Puntos</span>
+                            </div>
+                        </div>
+
+                        <div class="results-actions">
+                            <a href="index.html" id="btn-return-subject" class="btn secondary">
+                                <i class="ph ph-arrow-u-down-left"></i> Volver a la materia
+                            </a>
+                            <button id="btn-retry-failed" class="btn secondary hidden">
+                                <i class="ph ph-warning-octagon"></i> Practicar falladas
+                            </button>
+                            <button id="btn-retry" class="btn primary">
+                                <i class="ph ph-arrows-clockwise"></i> Reintentar sesión
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Question Review Section -->
+                <div id="review-section" class="review-section hidden">
+                    <div class="section-header" style="margin-top: 1.5rem;">
+                        <div class="header-left">
+                            <div class="status-dot"></div>
+                            <h3>Revisión de Respuestas</h3>
+                        </div>
+                        <div class="segmented-control review-filters">
+                            <button type="button" class="segment active" data-filter="all">Todas</button>
+                            <button type="button" class="segment" data-filter="incorrect">Incorrectas</button>
+                            <button type="button" class="segment" data-filter="correct">Correctas</button>
+                        </div>
+                    </div>
+                    <div id="review-list" class="study-list"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="sys-toast hidden">
+        <i class="ph ph-info"></i>
+        <span class="toast-msg">Mensaje del sistema</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

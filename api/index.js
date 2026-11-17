@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('@neondatabase/serverless');
@@ -9,9 +10,13 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, '..')));
 
-// Conexión a Neon
+// Conexión a Neon mediante variable de entorno (.env / Vercel Environment Variables)
+if (!process.env.DATABASE_URL) {
+    console.warn('ADVERTENCIA: DATABASE_URL no está configurada en las variables de entorno.');
+}
+
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://neondb_owner:REDACTED@ep-misty-pond-ampl4jqm-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require',
+    connectionString: process.env.DATABASE_URL,
 });
 
 let dbInitPromise = null;

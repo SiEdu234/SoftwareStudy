@@ -531,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="empty-files-box">
                         <i class="ph ph-file-arrow-up"></i>
                         <p>Esta materia aún no tiene cuestionarios.</p>
-                        <span class="sys-text">Sube un archivo <code>.json</code> o <code>.xml</code> o arrástralo aquí.</span>
+                        <span class="sys-text">Sube un archivo <code>.json</code> o arrástralo aquí.</span>
                     </div>`;
                 updateSelectionSummary();
                 return;
@@ -1345,12 +1345,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =========================================================================
-    // 5. PÁGINA: PROMPTS & GUÍA IA (prompts.html)
+    // 5. PÁGINA: PROMPTS & GUÍA IA UNIFICADA (prompts.html)
     // =========================================================================
     function initPromptsPage() {
         const params = new URLSearchParams(window.location.search);
         const fromSubject = params.get('subject');
-        const initialTab = params.get('tab');
 
         const backBtn = document.getElementById('btn-back-from-prompts');
         if (backBtn && fromSubject) {
@@ -1358,20 +1357,19 @@ document.addEventListener('DOMContentLoaded', () => {
             backBtn.innerHTML = '<i class="ph ph-arrow-left"></i> Volver a la materia';
         }
 
-        function activateTab(tabName) {
-            const tabs = document.querySelectorAll('.modal-tab');
-            const panes = document.querySelectorAll('.modal-pane');
-            tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
-            panes.forEach(p => p.classList.toggle('active', p.dataset.pane === tabName));
-        }
-
-        if (initialTab) {
-            activateTab(initialTab);
-        }
-
-        document.querySelectorAll('.modal-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                activateTab(tab.dataset.tab);
+        // Selector rápido de cantidad de preguntas dentro del prompt unificado
+        const unifiedCodeEl = document.getElementById('code-prompt-unified');
+        document.querySelectorAll('.qty-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.qty-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                const qty = chip.dataset.qty || '20';
+                if (unifiedCodeEl) {
+                    unifiedCodeEl.textContent = unifiedCodeEl.textContent.replace(
+                        /Genera \d+ preguntas completas/,
+                        `Genera ${qty} preguntas completas`
+                    );
+                }
             });
         });
 
@@ -1404,7 +1402,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         btn.innerHTML = originalHTML;
                         btn.classList.remove('copied');
                     }, 2000);
-                    showToast('¡Copiado al portapapeles!');
+                    showToast('¡Prompt copiado al portapapeles!');
                 } catch (err) {
                     console.error('Error al copiar:', err);
                     showToast('No se pudo copiar automáticamente', 'error');
@@ -1412,32 +1410,21 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        function downloadTemplateFile(elementId, filename, mimeType) {
-            const el = document.getElementById(elementId);
-            if (!el) return;
-            const blob = new Blob([el.textContent], { type: `${mimeType};charset=utf-8` });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast(`Plantilla descargada: ${filename}`);
-        }
-
         const downloadJsonBtn = document.getElementById('btn-download-json-template');
         if (downloadJsonBtn) {
             downloadJsonBtn.addEventListener('click', () => {
-                downloadTemplateFile('code-template-json', 'plantilla_cuestionario.json', 'application/json');
-            });
-        }
-
-        const downloadXmlBtn = document.getElementById('btn-download-xml-template');
-        if (downloadXmlBtn) {
-            downloadXmlBtn.addEventListener('click', () => {
-                downloadTemplateFile('code-template-xml', 'plantilla_cuestionario.xml', 'application/xml');
+                const el = document.getElementById('code-template-json');
+                if (!el) return;
+                const blob = new Blob([el.textContent], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'plantilla_cuestionario.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('Plantilla descargada: plantilla_cuestionario.json');
             });
         }
     }

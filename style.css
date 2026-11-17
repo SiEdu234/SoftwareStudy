@@ -1895,6 +1895,44 @@ a.sys-card {
     padding: 1.3rem;
 }
 
+.unified-prompts-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+}
+
+.prompt-qty-selector {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.2rem 0.45rem;
+}
+
+.qty-chip {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.18rem 0.48rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.qty-chip:hover {
+    color: var(--fg-primary);
+}
+
+.qty-chip.active {
+    background: var(--accent);
+    color: var(--bg-base);
+}
+
 /* Media Queries */
 @media (max-width: 768px) {
     .grid-options-5 {
